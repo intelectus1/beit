@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
-import { Shield, User, Check, X, Clock, RefreshCw } from 'lucide-react'
+import { Shield, User, Check, X, Clock, RefreshCw, LayoutDashboard, BookOpen } from 'lucide-react'
 
 export default function SuperAdminPage() {
   const { user } = useAuth()
@@ -46,6 +47,20 @@ export default function SuperAdminPage() {
         <p className="text-zinc-400 mt-1 ml-1">
           Sesión como <span className="text-white font-medium">{user?.name}</span> · Gestión de aprobaciones de profesores
         </p>
+        <div className="flex gap-3 mt-4">
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white px-3 py-2 rounded-lg transition-colors"
+          >
+            <LayoutDashboard size={14} /> Dashboard
+          </Link>
+          <Link
+            to="/courses"
+            className="flex items-center gap-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white px-3 py-2 rounded-lg transition-colors"
+          >
+            <BookOpen size={14} /> Cursos
+          </Link>
+        </div>
       </div>
 
       {/* Stats card */}

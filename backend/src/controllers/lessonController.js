@@ -10,7 +10,7 @@ async function createLesson(req, res) {
 
   const course = await courseRepository.findRawById(Number(courseId));
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
-  if (course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
@@ -26,7 +26,7 @@ async function updateLesson(req, res) {
 
   const lesson = await lessonRepository.findById(Number(id));
   if (!lesson) return res.status(404).json({ error: 'Lección no encontrada' });
-  if (lesson.course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (lesson.course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
@@ -38,7 +38,7 @@ async function deleteLesson(req, res) {
   const { id } = req.params;
   const lesson = await lessonRepository.findById(Number(id));
   if (!lesson) return res.status(404).json({ error: 'Lección no encontrada' });
-  if (lesson.course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (lesson.course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 

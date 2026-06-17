@@ -31,7 +31,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-5">
             {user ? (
               <>
-                {user.role === 'SUPER_ADMIN' ? (
+                {user.role === 'SUPER_ADMIN' && (
                   <Link
                     to="/superadmin"
                     className="flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -39,24 +39,21 @@ export default function Navbar() {
                     <Shield size={15} />
                     Panel Admin
                   </Link>
-                ) : (
-                  <>
-                    <Link
-                      to="/dashboard"
-                      className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
-                    >
-                      <LayoutDashboard size={15} />
-                      Dashboard
-                    </Link>
-                    <Link
-                      to="/courses"
-                      className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
-                    >
-                      <BookOpen size={15} />
-                      Cursos
-                    </Link>
-                  </>
                 )}
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+                >
+                  <LayoutDashboard size={15} />
+                  Dashboard
+                </Link>
+                <Link
+                  to="/courses"
+                  className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+                >
+                  <BookOpen size={15} />
+                  Cursos
+                </Link>
                 <div className="flex items-center gap-3 border-l border-white/10 pl-5 ml-1">
                   <div className="flex items-center gap-2 text-sm">
                     <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
@@ -132,7 +129,7 @@ export default function Navbar() {
                     </p>
                   </div>
                 </div>
-                {user.role === 'SUPER_ADMIN' ? (
+                {user.role === 'SUPER_ADMIN' && (
                   <Link
                     to="/superadmin"
                     onClick={() => setMobileOpen(false)}
@@ -140,24 +137,21 @@ export default function Navbar() {
                   >
                     <Shield size={16} /> Panel Admin
                   </Link>
-                ) : (
-                  <>
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 px-2 py-2.5 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                      <LayoutDashboard size={16} /> Dashboard
-                    </Link>
-                    <Link
-                      to="/courses"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 px-2 py-2.5 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                      <BookOpen size={16} /> Cursos
-                    </Link>
-                  </>
                 )}
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 px-2 py-2.5 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  <LayoutDashboard size={16} /> Dashboard
+                </Link>
+                <Link
+                  to="/courses"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 px-2 py-2.5 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  <BookOpen size={16} /> Cursos
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-2 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors w-full text-left mt-1"

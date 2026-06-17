@@ -32,7 +32,7 @@ async function createTask(req, res) {
 
   const course = await courseRepository.findRawById(Number(courseId));
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
-  if (course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
@@ -52,7 +52,7 @@ async function updateTask(req, res) {
 
   const task = await taskRepository.findById(Number(id));
   if (!task) return res.status(404).json({ error: 'Tarea no encontrada' });
-  if (task.course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (task.course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
@@ -66,7 +66,7 @@ async function deleteTask(req, res) {
   const { id } = req.params;
   const task = await taskRepository.findById(Number(id));
   if (!task) return res.status(404).json({ error: 'Tarea no encontrada' });
-  if (task.course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (task.course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
@@ -124,7 +124,7 @@ async function gradeSubmission(req, res) {
 
   const submission = await submissionRepository.findById(Number(submissionId));
   if (!submission) return res.status(404).json({ error: 'Entrega no encontrada' });
-  if (submission.task.course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (submission.task.course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
@@ -142,7 +142,7 @@ async function getTaskSubmissions(req, res) {
   const { id } = req.params;
   const task = await taskRepository.findById(Number(id));
   if (!task) return res.status(404).json({ error: 'Tarea no encontrada' });
-  if (task.course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (task.course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 

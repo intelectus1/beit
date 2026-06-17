@@ -428,7 +428,7 @@ export default function CourseDetailPage() {
         setCourse(res.data)
         // If owner, preload requests so badge shows immediately
         const isCourseOwner =
-          user && (user.id === res.data.teacherId || user.role === 'ADMIN')
+          user && (user.id === res.data.teacherId || ['ADMIN', 'SUPER_ADMIN'].includes(user.role))
         if (isCourseOwner) {
           api
             .get(`/courses/${id}/enrollment-requests`)

@@ -11,7 +11,7 @@ async function getAllCourses(req, res) {
 async function getMyCourses(req, res) {
   const { id, role } = req.user;
 
-  if (role === 'TEACHER' || role === 'ADMIN') {
+  if (role === 'TEACHER' || role === 'ADMIN' || role === 'SUPER_ADMIN') {
     const courses = await courseRepository.findByTeacherId(id);
     return res.json(courses);
   }
@@ -42,7 +42,7 @@ async function updateCourse(req, res) {
 
   const course = await courseRepository.findRawById(Number(id));
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
-  if (course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso para editar este curso' });
   }
 
@@ -54,7 +54,7 @@ async function deleteCourse(req, res) {
   const { id } = req.params;
   const course = await courseRepository.findRawById(Number(id));
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
-  if (course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso para eliminar este curso' });
   }
 
@@ -95,7 +95,7 @@ async function getEnrollmentRequests(req, res) {
   const { id } = req.params;
   const course = await courseRepository.findRawById(Number(id));
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
-  if (course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
@@ -113,7 +113,7 @@ async function updateEnrollmentStatus(req, res) {
 
   const course = await courseRepository.findRawById(Number(id));
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
-  if (course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
@@ -127,7 +127,7 @@ async function getCourseStudents(req, res) {
 
   const course = await courseRepository.findRawById(courseId);
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
-  if (course.teacherId !== req.user.id && req.user.role !== 'ADMIN') {
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
