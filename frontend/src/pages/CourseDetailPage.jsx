@@ -636,7 +636,7 @@ export default function CourseDetailPage() {
                   )}
                 </div>
 
-                {course.lessons?.length === 0 ? (
+                {!course.lessons?.length ? (
                   <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-8 text-center text-zinc-400">
                     <BookOpen size={32} className="mx-auto mb-2 text-zinc-700" />
                     No hay lecciones aún
@@ -687,7 +687,7 @@ export default function CourseDetailPage() {
                   )}
                 </div>
 
-                {course.tasks?.length === 0 ? (
+                {!course.tasks?.length ? (
                   <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-8 text-center text-zinc-400">
                     <ClipboardList size={32} className="mx-auto mb-2 text-zinc-700" />
                     No hay tareas aún

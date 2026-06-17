@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
   Home,
@@ -99,6 +100,7 @@ const TESTIMONIALS = [
 
 export default function Landing() {
   const { user } = useAuth()
+  const shouldReduceMotion = useReducedMotion()
   const [courses, setCourses] = useState([])
   const [loadingCourses, setLoadingCourses] = useState(true)
 
@@ -114,8 +116,146 @@ export default function Landing() {
     <div className="bg-black text-white overflow-x-hidden">
       <TubelightNavbar items={NAV_ITEMS} />
 
-      {/* ── HERO ─────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
+      {/* ── MOBILE HERO (< 768 px) ───────────────────── */}
+      <section
+        className="flex flex-col md:hidden relative overflow-hidden bg-black"
+        style={{ minHeight: '100svh' }}
+      >
+        {/* Deep purple-black ambient background */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0c0018] via-[#06000e] to-black" />
+          <div
+            className="absolute top-[-80px] left-1/2 -translate-x-1/2 w-[380px] h-[380px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.30) 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute top-[8%] right-[-70px] w-[260px] h-[260px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(79,70,229,0.18) 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute bottom-[28%] left-[-70px] w-[210px] h-[210px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.14) 0%, transparent 70%)' }}
+          />
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center px-5 pt-[72px] pb-8">
+
+          {/* ── Hero image ─────────────────────────── */}
+          <motion.div
+            className="relative w-full max-w-[320px] mx-auto"
+            style={{ height: 'clamp(200px, 38vh, 280px)' }}
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {/* Purple/indigo glow halo */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  'radial-gradient(ellipse 80% 80% at 50% 65%, rgba(139,92,246,0.45) 0%, rgba(99,102,241,0.22) 48%, transparent 80%)',
+                transform: 'scale(1.45)',
+                filter: 'blur(28px)',
+              }}
+            />
+            {/* Floating image */}
+            <motion.div
+              className="relative w-full h-full"
+              animate={shouldReduceMotion ? {} : { y: [0, -10, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=640&h=500&fit=crop&q=90"
+                alt="Desarrollo de software con inteligencia artificial"
+                className="w-full h-full object-cover object-top rounded-2xl"
+                loading="eager"
+                style={{
+                  maskImage: 'linear-gradient(to bottom, black 48%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 48%, transparent 100%)',
+                }}
+              />
+            </motion.div>
+          </motion.div>
+
+          {/* ── Status badge ───────────────────────── */}
+          <motion.div
+            className="mt-5 flex items-center gap-2 border border-white/[0.12] rounded-full px-4 py-1.5 backdrop-blur-md"
+            style={{ background: 'rgba(255,255,255,0.05)' }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.45, ease: 'easeOut' }}
+          >
+            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shrink-0" />
+            <span className="text-[11px] text-white/60 font-medium tracking-wide">
+              Nueva era del aprendizaje tech
+            </span>
+          </motion.div>
+
+          {/* ── Headline ───────────────────────────── */}
+          <motion.h1
+            className="mt-4 font-extrabold text-white text-center leading-[1.07] tracking-[-0.02em]"
+            style={{ fontSize: 'clamp(2rem, 10.5vw, 2.6rem)', textWrap: 'balance' }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.55, ease: 'easeOut' }}
+          >
+            Domina la<br />
+            tecnología con<br />
+            IA y Software
+          </motion.h1>
+
+          {/* ── Description ────────────────────────── */}
+          <motion.p
+            className="mt-3 text-[13px] text-white/45 text-center leading-relaxed max-w-[260px]"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.42, duration: 0.5, ease: 'easeOut' }}
+          >
+            Cursos intensivos, mentores activos y proyectos reales.{' '}
+            <span className="text-white/65 font-semibold">beit.academy</span>.
+          </motion.p>
+
+          {/* ── CTAs ───────────────────────────────── */}
+          <motion.div
+            className="mt-6 flex flex-col items-stretch gap-3 w-full max-w-[300px]"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.54, duration: 0.5, ease: 'easeOut' }}
+          >
+            {user ? (
+              <Link
+                to="/dashboard"
+                className="flex items-center justify-center gap-2 bg-white text-black font-bold py-[15px] rounded-[14px] text-[15px] shadow-lg shadow-white/10 active:scale-[0.97] transition-transform duration-150"
+              >
+                Ir al Dashboard
+                <ArrowRight size={17} />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="flex items-center justify-center gap-2 bg-white text-black font-bold py-[15px] rounded-[14px] text-[15px] shadow-lg shadow-white/10 active:scale-[0.97] transition-transform duration-150"
+                >
+                  Comenzar gratis
+                  <ArrowRight size={17} />
+                </Link>
+                <Link
+                  to="/login"
+                  className="flex items-center justify-center gap-2 border border-white/[0.18] text-white/65 py-[13px] rounded-[14px] text-[13px] active:scale-[0.97] transition-transform duration-150"
+                >
+                  Iniciar sesión
+                </Link>
+              </>
+            )}
+          </motion.div>
+        </div>
+
+        {/* Bottom fade into next section */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black to-transparent pointer-events-none" />
+      </section>
+
+      {/* ── HERO (desktop ≥ 768 px) ──────────────────── */}
+      <section className="relative min-h-screen hidden md:flex items-center overflow-hidden">
         <Spotlight className="-top-40 left-0 md:left-40 md:-top-20" fill="white" />
 
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center gap-2 md:gap-8 pt-24 md:pt-28 pb-6 md:pb-16">
