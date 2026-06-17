@@ -68,7 +68,7 @@ export function TestimonialSlider({ reviews, className }) {
                   className="overflow-hidden rounded-lg w-16 h-20 md:w-20 md:h-24 opacity-40 hover:opacity-90 transition-opacity duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
                   aria-label={`Ver testimonio de ${review.name}`}
                 >
-                  <img src={review.thumbnailSrc} alt={review.name} className="w-full h-full object-cover" />
+                  <img src={review.thumbnailSrc} alt={review.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 </button>
               )
             })}
@@ -89,6 +89,8 @@ export function TestimonialSlider({ reviews, className }) {
               exit="exit"
               transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
               className="absolute inset-0 w-full h-full object-cover rounded-xl"
+              loading="lazy"
+              decoding="async"
             />
           </AnimatePresence>
         </div>

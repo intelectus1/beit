@@ -3,22 +3,35 @@ import { useScroll, useTransform, motion } from 'framer-motion'
 
 export function ContainerScroll({ titleComponent, children }) {
   const containerRef = useRef(null)
-  const { scrollYProgress } = useScroll({ target: containerRef })
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(true)
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
+  if (isMobile) {
+    return (
+      <div className="py-12 px-6">
+        <div className="max-w-5xl mx-auto text-center mb-8">{titleComponent}</div>
+        <div className="max-w-5xl mx-auto rounded-2xl overflow-hidden border-2 border-[#6C6C6C] bg-[#222222] p-2">
+          <div className="rounded-xl overflow-hidden bg-zinc-900">{children}</div>
+        </div>
+      </div>
+    )
+  }
+
+  return <ContainerScrollDesktop titleComponent={titleComponent}>{children}</ContainerScrollDesktop>
+}
+
+function ContainerScrollDesktop({ titleComponent, children }) {
+  const containerRef = useRef(null)
+  const { scrollYProgress } = useScroll({ target: containerRef })
+
   const rotate = useTransform(scrollYProgress, [0, 1], [20, 0])
-  const scale = useTransform(
-    scrollYProgress,
-    [0, 1],
-    isMobile ? [0.7, 0.9] : [1.05, 1]
-  )
+  const scale = useTransform(scrollYProgress, [0, 1], [1.05, 1])
   const translate = useTransform(scrollYProgress, [0, 1], [0, -100])
 
   return (
