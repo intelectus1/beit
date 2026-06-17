@@ -118,38 +118,46 @@ export default function Landing() {
       <section className="relative min-h-screen flex items-center overflow-hidden">
         <Spotlight className="-top-40 left-0 md:left-40 md:-top-20" fill="white" />
 
-        <div className="container mx-auto px-6 flex flex-col md:flex-row items-center gap-8 pt-28 pb-16">
-          {/* Left column */}
-          <div className="flex-1 z-10 space-y-6">
+        <div className="container mx-auto px-6 flex flex-col md:flex-row items-center gap-2 md:gap-8 pt-24 md:pt-28 pb-6 md:pb-16">
+          {/* Robot — first on mobile, right on desktop */}
+          <div className="order-1 md:order-2 md:flex-1 w-full h-[56vw] min-h-[300px] sm:h-[420px] md:h-[560px] relative">
+            <SplineScene
+              scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+              className="w-full h-full"
+            />
+          </div>
+
+          {/* Text — second on mobile, left on desktop */}
+          <div className="order-2 md:order-1 md:flex-1 z-10 space-y-5 md:space-y-6 text-center md:text-left">
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-sm text-white/70">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
               Nueva era del aprendizaje tech
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
               Domina la
               <br />
               tecnología
             </h1>
 
             {/* GooeyText morphing — tech stack words */}
-            <div className="relative h-20 w-full overflow-hidden">
+            <div className="relative h-16 sm:h-20 w-full overflow-hidden">
               <GooeyText
                 texts={GOOEY_TEXTS}
                 morphTime={1.2}
                 cooldownTime={2}
                 className="h-full w-full"
-                textClassName="text-5xl md:text-6xl font-extrabold text-white"
+                textClassName="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white"
               />
             </div>
 
-            <p className="text-lg text-white/50 max-w-md leading-relaxed">
+            <p className="text-base sm:text-lg text-white/50 max-w-md mx-auto md:mx-0 leading-relaxed">
               Cursos intensivos, mentores activos y proyectos reales. Impulsa
               tu carrera en tecnología con{' '}
               <span className="text-white font-semibold">beit.academy</span>.
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-2">
+            <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-1 md:pt-2">
               {user ? (
                 <Link
                   to="/dashboard"
@@ -176,14 +184,6 @@ export default function Landing() {
                 </>
               )}
             </div>
-          </div>
-
-          {/* Right column — Spline 3D scene */}
-          <div className="flex-1 h-[380px] md:h-[560px] relative">
-            <SplineScene
-              scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-              className="w-full h-full"
-            />
           </div>
         </div>
 
