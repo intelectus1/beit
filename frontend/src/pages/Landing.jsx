@@ -105,7 +105,7 @@ export default function Landing() {
   useEffect(() => {
     api
       .get('/courses')
-      .then((res) => setCourses(res.data.slice(0, 6)))
+      .then((res) => setCourses(Array.isArray(res.data) ? res.data.slice(0, 6) : []))
       .catch(() => {})
       .finally(() => setLoadingCourses(false))
   }, [])

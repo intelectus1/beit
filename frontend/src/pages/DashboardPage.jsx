@@ -11,7 +11,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     api.get('/courses/my')
-      .then((res) => setCourses(res.data))
+      .then((res) => setCourses(Array.isArray(res.data) ? res.data : []))
       .finally(() => setLoading(false))
   }, [])
 

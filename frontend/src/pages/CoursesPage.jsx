@@ -12,8 +12,9 @@ export default function CoursesPage() {
   useEffect(() => {
     api.get('/courses')
       .then((res) => {
-        setCourses(res.data)
-        setFiltered(res.data)
+        const data = Array.isArray(res.data) ? res.data : []
+        setCourses(data)
+        setFiltered(data)
       })
       .finally(() => setLoading(false))
   }, [])
