@@ -138,12 +138,12 @@ export default function Landing() {
           />
         </div>
 
-        <div className="relative z-10 flex flex-col items-center px-5 pt-[72px] pb-8">
+        <div className="relative z-10 flex flex-col items-center px-5 pt-14 pb-4">
 
           {/* ── Hero image ─────────────────────────── */}
           <motion.div
             className="relative w-full max-w-[320px] mx-auto"
-            style={{ height: 'clamp(200px, 38vh, 280px)' }}
+            style={{ height: 'clamp(175px, 33vh, 245px)' }}
             initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
@@ -179,7 +179,7 @@ export default function Landing() {
 
           {/* ── Status badge ───────────────────────── */}
           <motion.div
-            className="mt-5 flex items-center gap-2 border border-white/[0.12] rounded-full px-4 py-1.5 backdrop-blur-md"
+            className="mt-4 flex items-center gap-2 border border-white/[0.12] rounded-full px-4 py-1.5 backdrop-blur-md"
             style={{ background: 'rgba(255,255,255,0.05)' }}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -193,7 +193,7 @@ export default function Landing() {
 
           {/* ── Headline ───────────────────────────── */}
           <motion.h1
-            className="mt-4 font-extrabold text-white text-center leading-[1.07] tracking-[-0.02em]"
+            className="mt-3 font-extrabold text-white text-center leading-[1.07] tracking-[-0.02em]"
             style={{ fontSize: 'clamp(2rem, 10.5vw, 2.6rem)', textWrap: 'balance' }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -217,7 +217,7 @@ export default function Landing() {
 
           {/* ── CTAs ───────────────────────────────── */}
           <motion.div
-            className="mt-6 flex flex-col items-stretch gap-3 w-full max-w-[300px]"
+            className="mt-5 flex flex-col items-stretch gap-2.5 w-full max-w-[300px]"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.54, duration: 0.5, ease: 'easeOut' }}
