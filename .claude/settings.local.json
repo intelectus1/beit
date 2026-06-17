@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm *)",
+      "Bash(npx vite *)",
+      "Bash(claude mcp *)",
+      "mcp__TestSprite__testsprite_check_account_info",
+      "mcp__TestSprite__testsprite_bootstrap",
+      "mcp__TestSprite__testsprite_generate_code_summary",
+      "mcp__TestSprite__testsprite_generate_standardized_prd",
+      "mcp__TestSprite__testsprite_generate_frontend_test_plan",
+      "mcp__TestSprite__testsprite_generate_code_and_execute",
+      "Bash(New-Item -ItemType File -Path \"C:\\\\ProyectClaude\\\\PRD.md\" -Force)",
+      "Bash(Out-Null)",
+      "Bash(Write-Output \"created\")",
+      "PowerShell(npx skills add https://github.com/pbakaus/impeccable --skill animate)",
+      "PowerShell(npx skills add https://github.com/pbakaus/impeccable --skill impeccable)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\ProyectClaude\\\\backend\\\\prisma\\\\migrations\\\\20260615000002_add_teams_link_super_admin\")",
+      "Bash(Write-Host \"created\")",
+      "PowerShell(Get-Process *)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__get_project_url"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

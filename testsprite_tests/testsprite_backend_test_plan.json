@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "postapiauthregisterstudentaccountcreation",
+    "description": "Verify that a student can register successfully via POST /api/auth/register with valid student credentials, receiving a 201 response with user and token, and that the student is immediately active."
+  },
+  {
+    "id": "TC002",
+    "title": "postapiauthregisterteacheraccountpendingapproval",
+    "description": "Verify that a teacher registration via POST /api/auth/register returns a 201 response with a pending approval message, and that the teacher cannot log in before Super Admin approval."
+  },
+  {
+    "id": "TC003",
+    "title": "postapiauthloginvalidationandauthorization",
+    "description": "Verify POST /api/auth/login behavior for missing fields (400), invalid credentials (401), and blocked login for pending or rejected accounts (403)."
+  },
+  {
+    "id": "TC004",
+    "title": "getapiauthmeauthenticationrequired",
+    "description": "Verify GET /api/auth/me returns 200 with user profile when called with valid token, and 401 when called without or with invalid token."
+  },
+  {
+    "id": "TC005",
+    "title": "getapicoursespublishedlist",
+    "description": "Verify GET /api/courses returns 200 with a list of published courses including teacher info and counts, accessible without authentication."
+  },
+  {
+    "id": "TC006",
+    "title": "postapicoursescreationbyauthorizedusers",
+    "description": "Verify that authenticated teachers, admins, or super admins can create a course via POST /api/courses with required title, receiving 201 response, and that missing title returns 400."
+  },
+  {
+    "id": "TC007",
+    "title": "postapicoursesidenrollenrollmentrequest",
+    "description": "Verify that authenticated students can request enrollment in a published course via POST /api/courses/:id/enroll, receiving 201 with PENDING status, and that duplicate or pending enrollments return 409."
+  },
+  {
+    "id": "TC008",
+    "title": "putapiadminteachersidapprovebysuperadmin",
+    "description": "Verify that Super Admin can approve a pending teacher account via PUT /api/admin/teachers/:id/approve, receiving 200 with updated ACTIVE status, and that non-Super Admins receive 403."
+  },
+  {
+    "id": "TC009",
+    "title": "postapicoursescourseidlessonscreation",
+    "description": "Verify that course owners or admins can create lessons via POST /api/courses/:courseId/lessons with required title and content, receiving 201, and that missing fields return 400."
+  },
+  {
+    "id": "TC010",
+    "title": "postapitasksidsubmitbysubmittedstudent",
+    "description": "Verify that accepted students can submit task responses via POST /api/tasks/:id/submit with required content, receiving 201, and that duplicate submissions return 409, missing content returns 400, and unauthorized students receive 403."
+  }
+]

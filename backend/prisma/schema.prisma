@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_APPROVAL
+  REJECTED
+}
+
+enum SubmissionStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String     @unique
+  password  String
+  role      Role       @default(STUDENT)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+
+  coursesCreated Course[]     @relation("TeacherCourses")
+  enrollments    Enrollment[]
+  submissions    Submission[]
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  coverImage  String?
+  teamsLink   String?
+  isPublished Boolean  @default(false)
+  teacherId   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher     User         @relation("TeacherCourses", fields: [teacherId], references: [id])
+  lessons     Lesson[]
+  enrollments Enrollment[]
+  tasks       Task[]
+}
+
+model Lesson {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  order     Int      @default(0)
+  videoUrl  String?
+  courseId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Enrollment {
+  id         Int              @id @default(autoincrement())
+  userId     Int
+  courseId   Int
+  status     EnrollmentStatus @default(PENDING)
+  enrolledAt DateTime         @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  dueDate     DateTime?
+  maxScore    Int       @default(100)
+  courseId    Int
+  createdAt   DateTime  @default(now())
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+}
+
+model Submission {
+  id          Int              @id @default(autoincrement())
+  content     String
+  fileUrl     String?
+  score       Int?
+  feedback    String?
+  status      SubmissionStatus @default(SUBMITTED)
+  taskId      Int
+  studentId   Int
+  submittedAt DateTime         @default(now())
+  gradedAt    DateTime?
+
+  task    Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id])
+
+  @@unique([taskId, studentId])
+}
