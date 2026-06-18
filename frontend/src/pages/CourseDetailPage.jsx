@@ -6,8 +6,9 @@ import toast from 'react-hot-toast'
 import {
   BookOpen, Users, ChevronRight, Plus, Edit, ClipboardList, ChevronDown,
   User, Check, X, Star, Link2, Calendar, Trash2, GripVertical,
-  CheckSquare, Square, TrendingUp, Clock, MapPin, Video, Save, ImagePlus,
+  CheckSquare, Square, TrendingUp, Clock, MapPin, Video, Save, ImagePlus, UserMinus,
 } from 'lucide-react'
+import { FlowHoverButton } from '../components/ui/flow-hover-button'
 
 // ── Progress Bar ──────────────────────────────────────────────────────────────
 function ProgressBar({ value }) {
@@ -127,10 +128,10 @@ function EditCourseModal({ course, onClose, onSaved }) {
             <input type="url" value={form.teamsLink} onChange={(e) => setForm((f) => ({ ...f, teamsLink: e.target.value }))} className={inputClass} placeholder="https://teams.microsoft.com/..." />
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">Cancelar</button>
-            <button type="submit" disabled={loading || uploadingCover} className="flex-1 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
+            <FlowHoverButton type="button" onClick={onClose} variant="secondary" className="flex-1 py-2.5 text-sm">Cancelar</FlowHoverButton>
+            <FlowHoverButton type="submit" disabled={loading || uploadingCover} variant="primary" className="flex-1 py-2.5 text-sm">
               {loading || uploadingCover ? 'Guardando...' : 'Guardar'}
-            </button>
+            </FlowHoverButton>
           </div>
         </form>
       </div>
@@ -704,12 +705,12 @@ function EnrollmentRequestsTab({ courseId, requests, loading, onAction }) {
             </div>
           </div>
           <div className="flex gap-2 shrink-0">
-            <button onClick={() => handleAction(req.id, 'ACCEPTED')} disabled={processing[req.id]} className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
-              <Check size={14} /> Aceptar
-            </button>
-            <button onClick={() => handleAction(req.id, 'REJECTED')} disabled={processing[req.id]} className="flex items-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
-              <X size={14} /> Rechazar
-            </button>
+            <FlowHoverButton onClick={() => handleAction(req.id, 'ACCEPTED')} disabled={processing[req.id]} variant="success" icon={<Check size={14} />} className="text-sm px-3 py-1.5">
+              Aceptar
+            </FlowHoverButton>
+            <FlowHoverButton onClick={() => handleAction(req.id, 'REJECTED')} disabled={processing[req.id]} variant="danger" icon={<X size={14} />} className="text-sm px-3 py-1.5">
+              Rechazar
+            </FlowHoverButton>
           </div>
         </div>
       ))}
@@ -722,6 +723,7 @@ function StudentsGradesTab({ students, loading, courseId, onRefresh }) {
   const [expanded, setExpanded] = useState({})
   const [scores, setScores] = useState({})
   const [grading, setGrading] = useState({})
+  const [removing, setRemoving] = useState({})
 
   async function handleGrade(submissionId, score, maxScore) {
     if (score === '' || score === undefined) return
@@ -739,6 +741,20 @@ function StudentsGradesTab({ students, loading, courseId, onRefresh }) {
     }
   }
 
+  async function handleRemoveStudent(studentId) {
+    if (!confirm('¿Eliminar a este alumno del curso? Perderá el acceso y sus entregas serán borradas.')) return
+    setRemoving((r) => ({ ...r, [studentId]: true }))
+    try {
+      await api.delete(`/courses/${courseId}/students/${studentId}`)
+      toast.success('Alumno eliminado del curso')
+      onRefresh()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al eliminar')
+    } finally {
+      setRemoving((r) => ({ ...r, [studentId]: false }))
+    }
+  }
+
   if (loading) return <div className="text-zinc-400 text-center py-12">Cargando estudiantes...</div>
   if (students.length === 0) return (
     <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-10 text-center">
@@ -751,24 +767,39 @@ function StudentsGradesTab({ students, loading, courseId, onRefresh }) {
     <div className="space-y-2">
       {students.map((student) => (
         <div key={student.id} className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
-          <button
-            onClick={() => setExpanded((e) => ({ ...e, [student.id]: !e[student.id] }))}
-            className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/40 transition-colors"
-          >
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between p-4 hover:bg-zinc-800/40 transition-colors">
+            <button
+              onClick={() => setExpanded((e) => ({ ...e, [student.id]: !e[student.id] }))}
+              className="flex items-center gap-3 flex-1 text-left"
+            >
               <div className="w-9 h-9 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
                 <User size={14} className="text-indigo-400" />
               </div>
-              <div className="text-left">
+              <div>
                 <p className="font-medium text-white">{student.name}</p>
                 <p className="text-xs text-zinc-500">{student.email}</p>
               </div>
+            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-zinc-600 hidden sm:inline">{student.tasks.filter((t) => t.status === 'GRADED').length}/{student.tasks.length} calificadas</span>
+              <button
+                onClick={() => handleRemoveStudent(student.id)}
+                disabled={removing[student.id]}
+                className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                title="Eliminar alumno del curso"
+              >
+                {removing[student.id]
+                  ? <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin inline-block" />
+                  : <UserMinus size={14} />
+                }
+              </button>
+              <ChevronDown
+                size={16}
+                onClick={() => setExpanded((e) => ({ ...e, [student.id]: !e[student.id] }))}
+                className={`text-zinc-500 transition-transform duration-200 cursor-pointer ${expanded[student.id] ? 'rotate-180' : ''}`}
+              />
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-zinc-600">{student.tasks.filter((t) => t.status === 'GRADED').length}/{student.tasks.length} calificadas</span>
-              <ChevronDown size={16} className={`text-zinc-500 transition-transform duration-200 ${expanded[student.id] ? 'rotate-180' : ''}`} />
-            </div>
-          </button>
+          </div>
 
           {expanded[student.id] && (
             <div className="border-t border-zinc-800">
@@ -861,15 +892,15 @@ function EnrollmentButton({ status, enrolling, onEnroll, isPublished }) {
   if (status === 'REJECTED') return (
     <div className="space-y-2">
       <div className="text-center py-2.5 text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg text-sm">Solicitud rechazada</div>
-      <button onClick={onEnroll} disabled={enrolling} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors">
+      <FlowHoverButton onClick={onEnroll} disabled={enrolling} variant="secondary" className="w-full py-2.5 text-sm">
         {enrolling ? 'Enviando...' : 'Volver a solicitar'}
-      </button>
+      </FlowHoverButton>
     </div>
   )
   return (
-    <button onClick={onEnroll} disabled={enrolling} className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-lg font-medium disabled:opacity-50 transition-colors">
+    <FlowHoverButton onClick={onEnroll} disabled={enrolling} variant="primary" className="w-full py-3">
       {enrolling ? 'Enviando...' : 'Solicitar Inscripción'}
-    </button>
+    </FlowHoverButton>
   )
 }
 

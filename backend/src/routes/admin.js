@@ -8,6 +8,8 @@ const {
   getTeacherById,
   updateTeacher,
   toggleTeacherStatus,
+  getAllStudents,
+  getAllCoursesAdmin,
 } = require('../controllers/adminController');
 const { authenticate, requireRole } = require('../middleware/auth');
 
@@ -20,5 +22,8 @@ router.put('/teachers/:id/approve', approveTeacher);
 router.put('/teachers/:id/reject', rejectTeacher);
 router.put('/teachers/:id/toggle-status', toggleTeacherStatus);
 router.put('/teachers/:id', updateTeacher);
+
+router.get('/students', getAllStudents);
+router.get('/courses', getAllCoursesAdmin);
 
 module.exports = router;

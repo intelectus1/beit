@@ -1,4 +1,5 @@
 const userRepository = require('../repositories/userRepository');
+const courseRepository = require('../repositories/courseRepository');
 
 async function getPendingTeachers(req, res) {
   const teachers = await userRepository.findPendingTeachers();
@@ -66,6 +67,17 @@ async function toggleTeacherStatus(req, res) {
   res.json(updated);
 }
 
+async function getAllStudents(req, res) {
+  const { search } = req.query;
+  const students = await userRepository.findAllStudents(search || '');
+  res.json(students);
+}
+
+async function getAllCoursesAdmin(req, res) {
+  const courses = await courseRepository.findAll();
+  res.json(courses);
+}
+
 module.exports = {
   getPendingTeachers,
   approveTeacher,
@@ -74,4 +86,6 @@ module.exports = {
   getTeacherById,
   updateTeacher,
   toggleTeacherStatus,
+  getAllStudents,
+  getAllCoursesAdmin,
 };

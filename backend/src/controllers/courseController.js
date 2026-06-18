@@ -201,6 +201,17 @@ async function getMyGrades(req, res) {
   );
 }
 
+async function removeStudent(req, res) {
+  const { id: courseId, userId } = req.params;
+  const course = await courseRepository.findRawById(Number(courseId));
+  if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'No tienes permiso' });
+  }
+  await enrollmentRepository.removeByUserAndCourse(Number(userId), Number(courseId));
+  res.json({ message: 'Alumno removido del curso' });
+}
+
 async function uploadCourseCover(req, res) {
   const { id } = req.params;
   if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
@@ -241,4 +252,5 @@ module.exports = {
   getCourseStudents,
   getMyGrades,
   uploadCourseCover,
+  removeStudent,
 };

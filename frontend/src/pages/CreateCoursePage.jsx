@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
 import { ImagePlus, X } from 'lucide-react'
+import { FlowHoverButton } from '../components/ui/flow-hover-button'
 
 export default function CreateCoursePage() {
   const [form, setForm] = useState({ title: '', description: '' })
@@ -124,20 +125,12 @@ export default function CreateCoursePage() {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex-1 border border-zinc-700 text-zinc-300 py-2.5 rounded-lg font-medium hover:bg-zinc-800 transition-colors"
-            >
+            <FlowHoverButton type="button" onClick={() => navigate(-1)} variant="secondary" className="flex-1 py-2.5">
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+            </FlowHoverButton>
+            <FlowHoverButton type="submit" disabled={loading} variant="primary" className="flex-1 py-2.5">
               {loading ? 'Creando...' : 'Crear curso'}
-            </button>
+            </FlowHoverButton>
           </div>
         </form>
       </div>

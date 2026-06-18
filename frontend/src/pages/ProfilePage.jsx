@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
 import { User, Save, Camera, Upload } from 'lucide-react'
+import { FlowHoverButton } from '../components/ui/flow-hover-button'
 
 const ROLE_LABELS = {
   STUDENT: 'Alumno',
@@ -157,14 +158,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            <Save size={16} />
+          <FlowHoverButton type="submit" disabled={loading} variant="primary" icon={<Save size={16} />} className="w-full py-2.5">
             {loading ? 'Guardando...' : 'Guardar nombre'}
-          </button>
+          </FlowHoverButton>
         </form>
       </div>
     </div>

@@ -17,6 +17,7 @@ const {
   getCourseStudents,
   getMyGrades,
   uploadCourseCover,
+  removeStudent,
 } = require('../controllers/courseController');
 const { createLesson, reorderLessons } = require('../controllers/lessonController');
 const { getCourseTasks, createTask } = require('../controllers/taskController');
@@ -66,6 +67,7 @@ router.get('/:id/my-grades', authenticate, requireRole('STUDENT'), getMyGrades);
 router.get('/:id/enrollment-requests', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), getEnrollmentRequests);
 router.put('/:id/enrollments/:enrollmentId', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), updateEnrollmentStatus);
 router.get('/:id/students', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), getCourseStudents);
+router.delete('/:id/students/:userId', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), removeStudent);
 
 router.post('/:courseId/lessons', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), createLesson);
 router.put('/:courseId/lessons/reorder', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), reorderLessons);

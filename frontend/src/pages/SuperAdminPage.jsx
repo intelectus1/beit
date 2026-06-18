@@ -4,8 +4,10 @@ import api from '../lib/api'
 import toast from 'react-hot-toast'
 import {
   Shield, User, Check, X, Clock, RefreshCw, Users, BookOpen,
-  Search, Edit2, Power, ChevronDown, ChevronUp, Save,
+  Search, Edit2, Power, ChevronDown, ChevronUp, GraduationCap,
+  LayoutGrid, CheckCircle, XCircle, Eye,
 } from 'lucide-react'
+import { FlowHoverButton } from '../components/ui/flow-hover-button'
 
 // ── Edit Teacher Modal ────────────────────────────────────────────────────────
 function EditTeacherModal({ teacher, onClose, onSaved }) {
@@ -38,30 +40,26 @@ function EditTeacherModal({ teacher, onClose, onSaved }) {
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-1.5">Nombre</label>
             <input
-              type="text"
-              required
-              value={form.name}
+              type="text" required value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-1.5">Email</label>
             <input
-              type="email"
-              required
-              value={form.email}
+              type="email" required value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
+            <FlowHoverButton type="button" onClick={onClose} variant="secondary" className="flex-1 py-2.5 text-sm">
               Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="flex-1 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
+            </FlowHoverButton>
+            <FlowHoverButton type="submit" disabled={loading} variant="primary" className="flex-1 py-2.5 text-sm">
               {loading ? 'Guardando...' : 'Guardar'}
-            </button>
+            </FlowHoverButton>
           </div>
         </form>
       </div>
@@ -78,11 +76,8 @@ function TeacherRow({ teacher, onEdit, onToggle, onToggleExpand, expanded }) {
 
   async function handleToggle() {
     setToggling(true)
-    try {
-      await onToggle(teacher.id)
-    } finally {
-      setToggling(false)
-    }
+    try { await onToggle(teacher.id) }
+    finally { setToggling(false) }
   }
 
   return (
@@ -96,9 +91,9 @@ function TeacherRow({ teacher, onEdit, onToggle, onToggleExpand, expanded }) {
             <div className="flex items-center gap-2">
               <p className="font-medium text-white truncate">{teacher.name}</p>
               <span className={`text-xs px-1.5 py-0.5 rounded-full border ${
-                isActive ? 'text-green-400 bg-green-500/10 border-green-500/20' :
-                teacher.status === 'PENDING_APPROVAL' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' :
-                'text-red-400 bg-red-500/10 border-red-500/20'
+                isActive ? 'text-green-400 bg-green-500/10 border-green-500/20'
+                : teacher.status === 'PENDING_APPROVAL' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+                : 'text-red-400 bg-red-500/10 border-red-500/20'
               }`}>
                 {isActive ? 'Activo' : teacher.status === 'PENDING_APPROVAL' ? 'Pendiente' : 'Inactivo'}
               </span>
@@ -106,41 +101,28 @@ function TeacherRow({ teacher, onEdit, onToggle, onToggleExpand, expanded }) {
             <p className="text-sm text-zinc-500 truncate">{teacher.email}</p>
           </div>
         </div>
-
         <div className="flex items-center gap-2 shrink-0">
           <div className="hidden sm:flex items-center gap-4 text-xs text-zinc-500 mr-2">
             <span className="flex items-center gap-1"><BookOpen size={11} /> {courses.length} cursos</span>
             <span className="flex items-center gap-1"><Users size={11} /> {totalStudents} alumnos</span>
           </div>
-          <button
-            onClick={() => onEdit(teacher)}
-            className="p-2 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
-            title="Editar"
-          >
+          <button onClick={() => onEdit(teacher)} className="p-2 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors" title="Editar">
             <Edit2 size={15} />
           </button>
           <button
-            onClick={handleToggle}
-            disabled={toggling}
-            className={`p-2 rounded-lg transition-colors ${
-              isActive ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10' : 'text-zinc-500 hover:text-green-400 hover:bg-green-500/10'
-            }`}
+            onClick={handleToggle} disabled={toggling}
+            className={`p-2 rounded-lg transition-colors ${isActive ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10' : 'text-zinc-500 hover:text-green-400 hover:bg-green-500/10'}`}
             title={isActive ? 'Desactivar' : 'Activar'}
           >
             {toggling ? <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin inline-block" /> : <Power size={15} />}
           </button>
           {courses.length > 0 && (
-            <button
-              onClick={() => onToggleExpand(teacher.id)}
-              className="p-2 text-zinc-500 hover:text-white rounded-lg transition-colors"
-            >
+            <button onClick={() => onToggleExpand(teacher.id)} className="p-2 text-zinc-500 hover:text-white rounded-lg transition-colors">
               {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
           )}
         </div>
       </div>
-
-      {/* Expanded courses */}
       {expanded && courses.length > 0 && (
         <div className="border-t border-zinc-800 bg-zinc-950/50 px-4 py-3">
           <p className="text-xs text-zinc-600 mb-2 uppercase tracking-wider">Cursos asignados</p>
@@ -177,14 +159,9 @@ function PendingTab({ teachers, loading, processing, onAction, onRefresh }) {
             <p className="text-2xl font-bold text-white">{loading ? '—' : teachers.length}</p>
           </div>
         </div>
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-lg transition-colors disabled:opacity-40"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+        <FlowHoverButton onClick={onRefresh} disabled={loading} variant="secondary" icon={<RefreshCw size={14} className={loading ? 'animate-spin' : ''} />} className="text-sm px-3 py-2">
           Actualizar
-        </button>
+        </FlowHoverButton>
       </div>
 
       {loading ? (
@@ -214,24 +191,242 @@ function PendingTab({ teachers, loading, processing, onAction, onRefresh }) {
                   {new Date(teacher.createdAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
                 <div className="flex gap-2">
-                  <button
+                  <FlowHoverButton
                     onClick={() => onAction(teacher.id, 'approve')}
                     disabled={!!processing[teacher.id]}
-                    className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                    variant="success"
+                    icon={processing[teacher.id] === 'approve' ? <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check size={14} />}
+                    className="text-sm px-3 py-1.5"
                   >
-                    {processing[teacher.id] === 'approve' ? <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Check size={14} />}
                     Aprobar
-                  </button>
-                  <button
+                  </FlowHoverButton>
+                  <FlowHoverButton
                     onClick={() => onAction(teacher.id, 'reject')}
                     disabled={!!processing[teacher.id]}
-                    className="flex items-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                    variant="danger"
+                    icon={processing[teacher.id] === 'reject' ? <span className="w-3 h-3 border-red-400/40 border-t-red-400 rounded-full animate-spin border-2" /> : <X size={14} />}
+                    className="text-sm px-3 py-1.5"
                   >
-                    {processing[teacher.id] === 'reject' ? <span className="w-3 h-3 border-2 border-red-400/40 border-t-red-400 rounded-full animate-spin" /> : <X size={14} />}
                     Rechazar
-                  </button>
+                  </FlowHoverButton>
                 </div>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Students Tab ──────────────────────────────────────────────────────────────
+function StudentsTab() {
+  const [students, setStudents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [expanded, setExpanded] = useState({})
+
+  const fetchStudents = useCallback((q = '') => {
+    setLoading(true)
+    api.get(`/admin/students${q ? `?search=${encodeURIComponent(q)}` : ''}`)
+      .then((res) => setStudents(res.data))
+      .catch(() => toast.error('Error al cargar alumnos'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => { fetchStudents() }, [])
+  useEffect(() => {
+    const t = setTimeout(() => fetchStudents(search), 400)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const accepted = (s) => s.enrollments?.filter((e) => e.status === 'ACCEPTED').length || 0
+  const pending = (s) => s.enrollments?.filter((e) => e.status === 'PENDING').length || 0
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="flex-1 relative">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <input
+            type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o email..."
+            className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <FlowHoverButton onClick={() => fetchStudents(search)} disabled={loading} variant="secondary" icon={<RefreshCw size={14} className={loading ? 'animate-spin' : ''} />} className="text-sm px-3 py-2.5">
+          Actualizar
+        </FlowHoverButton>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          { label: 'Total alumnos', value: students.length, color: 'text-white' },
+          { label: 'Con cursos', value: students.filter((s) => accepted(s) > 0).length, color: 'text-green-400' },
+          { label: 'Sin cursos', value: students.filter((s) => accepted(s) === 0).length, color: 'text-zinc-500' },
+        ].map((s) => (
+          <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
+            <p className={`text-xl font-bold ${s.color}`}>{loading ? '—' : s.value}</p>
+            <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
+      ) : students.length === 0 ? (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-12 text-center">
+          <GraduationCap size={36} className="mx-auto mb-3 text-zinc-700" />
+          <p className="text-zinc-400">No se encontraron alumnos</p>
+        </div>
+      ) : (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
+          {students.map((student) => {
+            const acc = accepted(student)
+            const pend = pending(student)
+            return (
+              <div key={student.id}>
+                <div
+                  className="flex items-center justify-between p-4 gap-3 hover:bg-zinc-800/30 transition-colors cursor-pointer"
+                  onClick={() => setExpanded((e) => ({ ...e, [student.id]: !e[student.id] }))}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                      {student.avatarUrl
+                        ? <img src={student.avatarUrl} alt={student.name} className="w-full h-full object-cover" />
+                        : <GraduationCap size={15} className="text-indigo-400" />
+                      }
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-white truncate">{student.name}</p>
+                      <p className="text-sm text-zinc-500 truncate">{student.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="hidden sm:flex items-center gap-3 text-xs">
+                      <span className="flex items-center gap-1 text-green-400"><CheckCircle size={11} /> {acc} cursos</span>
+                      {pend > 0 && <span className="flex items-center gap-1 text-yellow-400"><Clock size={11} /> {pend} pend.</span>}
+                    </div>
+                    {student.enrollments?.length > 0 && (
+                      expanded[student.id] ? <ChevronUp size={14} className="text-zinc-500" /> : <ChevronDown size={14} className="text-zinc-500" />
+                    )}
+                  </div>
+                </div>
+                {expanded[student.id] && student.enrollments?.length > 0 && (
+                  <div className="border-t border-zinc-800 bg-zinc-950/50 px-4 py-3">
+                    <p className="text-xs text-zinc-600 mb-2 uppercase tracking-wider">Inscripciones</p>
+                    <div className="space-y-1.5">
+                      {student.enrollments.map((enr) => (
+                        <div key={enr.id} className="flex items-center justify-between gap-2">
+                          <span className="text-sm text-zinc-300 truncate">{enr.course?.title}</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded border ${
+                            enr.status === 'ACCEPTED' ? 'text-green-400 bg-green-500/10 border-green-500/20'
+                            : enr.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+                            : 'text-red-400 bg-red-500/10 border-red-500/20'
+                          }`}>
+                            {enr.status === 'ACCEPTED' ? 'Aceptado' : enr.status === 'PENDING' ? 'Pendiente' : 'Rechazado'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Courses Tab ───────────────────────────────────────────────────────────────
+function CoursesTab() {
+  const [courses, setCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all')
+
+  useEffect(() => {
+    setLoading(true)
+    api.get('/admin/courses')
+      .then((res) => setCourses(res.data))
+      .catch(() => toast.error('Error al cargar cursos'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const filtered = courses.filter((c) => {
+    const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.teacher?.name?.toLowerCase().includes(search.toLowerCase())
+    const matchFilter = filter === 'all' || (filter === 'published' && c.isPublished) || (filter === 'draft' && !c.isPublished)
+    return matchSearch && matchFilter
+  })
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="flex-1 relative">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <input
+            type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por título o profesor..."
+            className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <select
+          value={filter} onChange={(e) => setFilter(e.target.value)}
+          className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value="all">Todos</option>
+          <option value="published">Publicados</option>
+          <option value="draft">Borradores</option>
+        </select>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          { label: 'Total cursos', value: courses.length, color: 'text-white' },
+          { label: 'Publicados', value: courses.filter((c) => c.isPublished).length, color: 'text-green-400' },
+          { label: 'Borradores', value: courses.filter((c) => !c.isPublished).length, color: 'text-yellow-400' },
+        ].map((s) => (
+          <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
+            <p className={`text-xl font-bold ${s.color}`}>{loading ? '—' : s.value}</p>
+            <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-12 text-center">
+          <BookOpen size={36} className="mx-auto mb-3 text-zinc-700" />
+          <p className="text-zinc-400">No se encontraron cursos</p>
+        </div>
+      ) : (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
+          {filtered.map((course) => (
+            <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-zinc-800/30 transition-colors">
+              <div className="w-12 h-12 rounded-lg overflow-hidden bg-indigo-500/20 flex items-center justify-center shrink-0">
+                {course.coverImage
+                  ? <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
+                  : <BookOpen size={18} className="text-indigo-400" />
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-white truncate">{course.title}</p>
+                <p className="text-sm text-zinc-500 truncate">Prof. {course.teacher?.name}</p>
+              </div>
+              <div className="hidden sm:flex items-center gap-4 text-xs text-zinc-500 shrink-0">
+                <span className="flex items-center gap-1"><Users size={11} /> {course._count?.enrollments || 0}</span>
+                <span className="flex items-center gap-1"><BookOpen size={11} /> {course._count?.lessons || 0}</span>
+              </div>
+              <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${
+                course.isPublished
+                  ? 'text-green-400 bg-green-500/10 border-green-500/20'
+                  : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+              }`}>
+                {course.isPublished ? 'Publicado' : 'Borrador'}
+              </span>
             </div>
           ))}
         </div>
@@ -270,14 +465,10 @@ export default function SuperAdminPage() {
       .finally(() => setTeachersLoading(false))
   }, [])
 
+  useEffect(() => { fetchPending(); fetchAllTeachers() }, [])
   useEffect(() => {
-    fetchPending()
-    fetchAllTeachers()
-  }, [])
-
-  useEffect(() => {
-    const timer = setTimeout(() => fetchAllTeachers(search), 400)
-    return () => clearTimeout(timer)
+    const t = setTimeout(() => fetchAllTeachers(search), 400)
+    return () => clearTimeout(t)
   }, [search])
 
   async function handleAction(teacherId, action) {
@@ -304,8 +495,8 @@ export default function SuperAdminPage() {
     }
   }
 
-  function handleTeacherSaved(updatedTeacher) {
-    setAllTeachers((prev) => prev.map((t) => (t.id === updatedTeacher.id ? { ...t, ...updatedTeacher } : t)))
+  function handleTeacherSaved(updated) {
+    setAllTeachers((prev) => prev.map((t) => (t.id === updated.id ? { ...t, ...updated } : t)))
   }
 
   const filteredTeachers = allTeachers.filter((t) => {
@@ -315,13 +506,14 @@ export default function SuperAdminPage() {
   })
 
   const tabs = [
-    { key: 'teachers', label: 'Profesores', icon: <Users size={15} />, badge: pendingTeachers.length },
+    { key: 'teachers', label: 'Profesores', icon: <Users size={15} /> },
+    { key: 'students', label: 'Alumnos', icon: <GraduationCap size={15} /> },
+    { key: 'courses', label: 'Cursos', icon: <LayoutGrid size={15} /> },
     { key: 'pending', label: 'Aprobaciones', icon: <Clock size={15} />, badge: pendingTeachers.length },
   ]
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      {/* Header */}
       <div className="mb-8 animate-fade-up" style={{ '--i': 0 }}>
         <div className="flex items-center gap-3 mb-1">
           <div className="bg-indigo-500/20 p-2 rounded-lg">
@@ -335,17 +527,17 @@ export default function SuperAdminPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-1 animate-fade-up" style={{ '--i': 1 }}>
+      <div className="flex gap-1 mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-1 overflow-x-auto animate-fade-up" style={{ '--i': 1 }}>
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex-shrink-0 flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-sm font-medium rounded-lg transition-colors ${
               activeTab === tab.key ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-white'
             }`}
           >
             {tab.icon}
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
             {tab.badge > 0 && (
               <span className="bg-yellow-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
                 {tab.badge}
@@ -358,22 +550,18 @@ export default function SuperAdminPage() {
       {/* Teachers Tab */}
       {activeTab === 'teachers' && (
         <div className="animate-fade-up" style={{ '--i': 2 }}>
-          {/* Search + Filter */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="flex-1 relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                type="text" value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nombre o email..."
-                className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+              className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="all">Todos los estados</option>
               <option value="active">Solo activos</option>
@@ -381,7 +569,6 @@ export default function SuperAdminPage() {
             </select>
           </div>
 
-          {/* Summary */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             {[
               { label: 'Total profesores', value: allTeachers.length, color: 'text-white' },
@@ -406,10 +593,8 @@ export default function SuperAdminPage() {
             <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
               {filteredTeachers.map((teacher) => (
                 <TeacherRow
-                  key={teacher.id}
-                  teacher={teacher}
-                  onEdit={setEditingTeacher}
-                  onToggle={handleToggle}
+                  key={teacher.id} teacher={teacher}
+                  onEdit={setEditingTeacher} onToggle={handleToggle}
                   onToggleExpand={(id) => setExpandedTeachers((e) => ({ ...e, [id]: !e[id] }))}
                   expanded={!!expandedTeachers[teacher.id]}
                 />
@@ -419,25 +604,17 @@ export default function SuperAdminPage() {
         </div>
       )}
 
-      {/* Pending Tab */}
+      {activeTab === 'students' && <div className="animate-fade-up" style={{ '--i': 2 }}><StudentsTab /></div>}
+      {activeTab === 'courses' && <div className="animate-fade-up" style={{ '--i': 2 }}><CoursesTab /></div>}
+
       {activeTab === 'pending' && (
         <div className="animate-fade-up" style={{ '--i': 2 }}>
-          <PendingTab
-            teachers={pendingTeachers}
-            loading={pendingLoading}
-            processing={processing}
-            onAction={handleAction}
-            onRefresh={fetchPending}
-          />
+          <PendingTab teachers={pendingTeachers} loading={pendingLoading} processing={processing} onAction={handleAction} onRefresh={fetchPending} />
         </div>
       )}
 
       {editingTeacher && (
-        <EditTeacherModal
-          teacher={editingTeacher}
-          onClose={() => setEditingTeacher(null)}
-          onSaved={handleTeacherSaved}
-        />
+        <EditTeacherModal teacher={editingTeacher} onClose={() => setEditingTeacher(null)} onSaved={handleTeacherSaved} />
       )}
     </div>
   )

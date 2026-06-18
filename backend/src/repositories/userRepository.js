@@ -59,4 +59,27 @@ async function findAllTeachers(search) {
   });
 }
 
-module.exports = { findByEmail, findById, findRawById, create, updateStatus, update, findPendingTeachers, findAllTeachers };
+async function findAllStudents(search) {
+  const where = { role: 'STUDENT' };
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+  return prisma.user.findMany({
+    where,
+    select: {
+      ...PUBLIC_SELECT,
+      enrollments: {
+        select: {
+          id: true, status: true, enrolledAt: true,
+          course: { select: { id: true, title: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+module.exports = { findByEmail, findById, findRawById, create, updateStatus, update, findPendingTeachers, findAllTeachers, findAllStudents };

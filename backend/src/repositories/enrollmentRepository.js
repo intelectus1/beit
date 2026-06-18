@@ -51,6 +51,10 @@ async function updateStatus(id, status) {
   });
 }
 
+async function removeByUserAndCourse(userId, courseId) {
+  return prisma.enrollment.deleteMany({ where: { userId, courseId } });
+}
+
 module.exports = {
   findByUserAndCourse,
   findAcceptedByUser,
@@ -59,4 +63,5 @@ module.exports = {
   create,
   update,
   updateStatus,
+  removeByUserAndCourse,
 };

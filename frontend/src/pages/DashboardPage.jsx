@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../lib/api'
 import { BookOpen, Users, Calendar, Plus, ArrowRight, TrendingUp, CheckSquare, Clock } from 'lucide-react'
+import { FlowHoverButton } from '../components/ui/flow-hover-button'
 
 function ProgressBar({ value, className = '' }) {
   return (
@@ -197,19 +198,16 @@ export default function DashboardPage() {
               {isTeacher ? 'Mis cursos' : 'Cursos inscritos'}
             </h2>
             {isTeacher ? (
-              <Link
-                to="/courses/create"
-                className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                <Plus size={16} />
-                Nuevo curso
+              <Link to="/courses/create">
+                <FlowHoverButton variant="primary" icon={<Plus size={15} />} className="text-sm px-4 py-2">
+                  Nuevo curso
+                </FlowHoverButton>
               </Link>
             ) : (
-              <Link
-                to="/courses"
-                className="text-indigo-400 text-sm font-medium hover:text-indigo-300 transition-colors flex items-center gap-1"
-              >
-                Explorar <ArrowRight size={14} />
+              <Link to="/courses">
+                <FlowHoverButton variant="ghost" icon={<ArrowRight size={14} />} className="text-sm px-3 py-1.5">
+                  Explorar
+                </FlowHoverButton>
               </Link>
             )}
           </div>
@@ -227,18 +225,12 @@ export default function DashboardPage() {
                 {isTeacher ? 'Aún no has creado ningún curso' : 'Aún no estás inscrito en ningún curso'}
               </p>
               {isTeacher ? (
-                <Link
-                  to="/courses/create"
-                  className="inline-block bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Crear primer curso
+                <Link to="/courses/create">
+                  <FlowHoverButton variant="primary" className="text-sm px-5 py-2">Crear primer curso</FlowHoverButton>
                 </Link>
               ) : (
-                <Link
-                  to="/courses"
-                  className="inline-block bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Explorar cursos
+                <Link to="/courses">
+                  <FlowHoverButton variant="primary" className="text-sm px-5 py-2">Explorar cursos</FlowHoverButton>
                 </Link>
               )}
             </div>
