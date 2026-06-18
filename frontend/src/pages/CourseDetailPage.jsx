@@ -1129,48 +1129,50 @@ export default function CourseDetailPage() {
                 onLessonsChange={(updated) => setCourse((c) => ({ ...c, lessons: updated }))}
               />
 
-              {/* Tasks */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-white">Tareas</h2>
-                  {isOwner && (
-                    <Link to={`/courses/${id}/tasks/create`} className="flex items-center gap-1 text-sm bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition-colors">
-                      <Plus size={14} /> Nueva tarea
-                    </Link>
-                  )}
-                </div>
-
-                {!course.tasks?.length ? (
-                  <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-8 text-center text-zinc-400">
-                    <ClipboardList size={32} className="mx-auto mb-2 text-zinc-700" />
-                    No hay tareas aún
-                  </div>
-                ) : (
-                  <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800">
-                    {course.tasks.map((task) =>
-                      isOwner || isAccepted ? (
-                        <Link key={task.id} to={`/tasks/${task.id}`} className="flex items-center gap-4 p-4 hover:bg-zinc-800/50 transition-colors">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-white">{task.title}</p>
-                            {task.dueDate && <p className="text-xs text-zinc-500 mt-0.5">Entrega: {new Date(task.dueDate).toLocaleDateString('es-PE')}</p>}
-                          </div>
-                          <span className="text-sm text-zinc-500 shrink-0">Máx: {task.maxScore}</span>
-                          <ChevronRight size={18} className="text-zinc-600 shrink-0" />
-                        </Link>
-                      ) : (
-                        <div key={task.id} className="flex items-center gap-4 p-4 opacity-60 cursor-default">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-white">{task.title}</p>
-                            {task.dueDate && <p className="text-xs text-zinc-500 mt-0.5">Entrega: {new Date(task.dueDate).toLocaleDateString('es-PE')}</p>}
-                          </div>
-                          <span className="text-sm text-zinc-500 shrink-0">Máx: {task.maxScore}</span>
-                          <ChevronRight size={18} className="text-zinc-700 shrink-0" />
-                        </div>
-                      )
+              {/* Unassigned tasks (no lessonId) */}
+              {(isOwner || course.tasks?.length > 0) && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-white">Tareas generales</h2>
+                    {isOwner && (
+                      <Link to={`/courses/${id}/tasks/create`} className="flex items-center gap-1 text-sm bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition-colors">
+                        <Plus size={14} /> Nueva tarea
+                      </Link>
                     )}
                   </div>
-                )}
-              </div>
+
+                  {!course.tasks?.length ? (
+                    <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 text-center text-zinc-500 text-sm">
+                      <ClipboardList size={28} className="mx-auto mb-2 text-zinc-700" />
+                      Las tareas se crean dentro de cada lección
+                    </div>
+                  ) : (
+                    <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800">
+                      {course.tasks.map((task) =>
+                        isOwner || isAccepted ? (
+                          <Link key={task.id} to={`/tasks/${task.id}`} className="flex items-center gap-4 p-4 hover:bg-zinc-800/50 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-white">{task.title}</p>
+                              {task.dueDate && <p className="text-xs text-zinc-500 mt-0.5">Entrega: {new Date(task.dueDate).toLocaleDateString('es-PE')}</p>}
+                            </div>
+                            <span className="text-sm text-zinc-500 shrink-0">Máx: {task.maxScore}</span>
+                            <ChevronRight size={18} className="text-zinc-600 shrink-0" />
+                          </Link>
+                        ) : (
+                          <div key={task.id} className="flex items-center gap-4 p-4 opacity-60 cursor-default">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-white">{task.title}</p>
+                              {task.dueDate && <p className="text-xs text-zinc-500 mt-0.5">Entrega: {new Date(task.dueDate).toLocaleDateString('es-PE')}</p>}
+                            </div>
+                            <span className="text-sm text-zinc-500 shrink-0">Máx: {task.maxScore}</span>
+                            <ChevronRight size={18} className="text-zinc-700 shrink-0" />
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {user?.role === 'STUDENT' && isAccepted && <MyGradesSection grades={myGrades} />}
             </>

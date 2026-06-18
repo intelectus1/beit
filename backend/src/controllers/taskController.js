@@ -1,5 +1,6 @@
 const courseRepository = require('../repositories/courseRepository');
 const enrollmentRepository = require('../repositories/enrollmentRepository');
+const lessonRepository = require('../repositories/lessonRepository');
 const taskRepository = require('../repositories/taskRepository');
 const submissionRepository = require('../repositories/submissionRepository');
 
@@ -167,9 +168,55 @@ async function getMySubmission(req, res) {
   res.json(submission);
 }
 
+async function getLessonTasks(req, res) {
+  const { lessonId } = req.params;
+  const lessonId_num = Number(lessonId);
+  const { role, id: userId } = req.user;
+
+  const lesson = await lessonRepository.findById(lessonId_num);
+  if (!lesson) return res.status(404).json({ error: 'Lección no encontrada' });
+
+  if (role === 'STUDENT') {
+    const enrollment = await enrollmentRepository.findByUserAndCourse(userId, lesson.course.id);
+    if (!enrollment || enrollment.status !== 'ACCEPTED') {
+      return res.status(403).json({ error: 'No tienes acceso a este curso' });
+    }
+  } else if (role === 'TEACHER' && lesson.course.teacherId !== userId) {
+    return res.status(403).json({ error: 'No tienes permiso' });
+  }
+
+  const tasks = await taskRepository.findByLesson(lessonId_num);
+  res.json(tasks);
+}
+
+async function createLessonTask(req, res) {
+  const { lessonId } = req.params;
+  const { title, description, dueDate, maxScore } = req.body;
+
+  if (!title || !description) return res.status(400).json({ error: 'Título y descripción son requeridos' });
+
+  const lesson = await lessonRepository.findById(Number(lessonId));
+  if (!lesson) return res.status(404).json({ error: 'Lección no encontrada' });
+  if (lesson.course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'No tienes permiso' });
+  }
+
+  const task = await taskRepository.create({
+    title,
+    description,
+    dueDate: dueDate ? new Date(dueDate) : null,
+    maxScore: maxScore || 100,
+    courseId: lesson.course.id,
+    lessonId: Number(lessonId),
+  });
+  res.status(201).json(task);
+}
+
 module.exports = {
   getCourseTasks,
   createTask,
+  createLessonTask,
+  getLessonTasks,
   updateTask,
   deleteTask,
   getTaskById,

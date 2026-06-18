@@ -2,9 +2,17 @@ const prisma = require('../config/database');
 
 async function findByCourse(courseId) {
   return prisma.task.findMany({
-    where: { courseId },
+    where: { courseId, lessonId: null },
     include: { _count: { select: { submissions: true } } },
     orderBy: { createdAt: 'desc' },
+  });
+}
+
+async function findByLesson(lessonId) {
+  return prisma.task.findMany({
+    where: { lessonId },
+    include: { _count: { select: { submissions: true } } },
+    orderBy: { createdAt: 'asc' },
   });
 }
 
@@ -38,4 +46,4 @@ async function remove(id) {
   return prisma.task.delete({ where: { id } });
 }
 
-module.exports = { findByCourse, findRawByCourse, findById, findRawById, create, update, remove };
+module.exports = { findByCourse, findByLesson, findRawByCourse, findById, findRawById, create, update, remove };

@@ -78,6 +78,7 @@ model Lesson {
 
   course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   materials LessonMaterial[]
+  tasks     Task[]
 }
 
 model Enrollment {
@@ -100,9 +101,11 @@ model Task {
   dueDate     DateTime?
   maxScore    Int       @default(100)
   courseId    Int
+  lessonId    Int?
   createdAt   DateTime  @default(now())
 
   course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson      Lesson?      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   submissions Submission[]
 }
 

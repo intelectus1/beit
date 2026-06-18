@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const { updateLesson, deleteLesson, getLessonById, reorderLessons } = require('../controllers/lessonController');
 const { getMaterials, uploadMaterial, downloadMaterial, deleteMaterial } = require('../controllers/materialController');
+const { getLessonTasks, createLessonTask } = require('../controllers/taskController');
 const { authenticate, requireRole } = require('../middleware/auth');
 
 const ALLOWED_TYPES = [
@@ -47,6 +48,10 @@ router.get('/:id', authenticate, getLessonById);
 router.put('/reorder/:courseId', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), reorderLessons);
 router.put('/:id', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), updateLesson);
 router.delete('/:id', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), deleteLesson);
+
+// Tasks for a lesson
+router.get('/:lessonId/tasks', authenticate, getLessonTasks);
+router.post('/:lessonId/tasks', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), createLessonTask);
 
 // Materials
 router.get('/:lessonId/materials', authenticate, getMaterials);

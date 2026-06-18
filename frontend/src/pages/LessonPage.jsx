@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Video, ExternalLink, Edit2, Save, X, Upload,
   FileText, Download, Trash2, File, Image, RefreshCw,
+  ClipboardList, Plus, Clock, ChevronRight, CheckCircle,
 } from 'lucide-react'
 
 // ── File type helpers ─────────────────────────────────────────────────────────
@@ -198,6 +199,202 @@ function MaterialsSection({ lessonId, isOwner }) {
   )
 }
 
+// ── Lesson Tasks Section ──────────────────────────────────────────────────────
+function LessonTasksSection({ lessonId, isOwner }) {
+  const { user } = useAuth()
+  const [tasks, setTasks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ title: '', description: '', dueDate: '', maxScore: 100 })
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState({})
+
+  const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
+
+  useEffect(() => {
+    api.get(`/lessons/${lessonId}/tasks`)
+      .then((res) => setTasks(Array.isArray(res.data) ? res.data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [lessonId])
+
+  async function handleCreate(e) {
+    e.preventDefault()
+    if (!form.title.trim() || !form.description.trim()) {
+      return toast.error('Título y descripción son requeridos')
+    }
+    setSaving(true)
+    try {
+      const { data } = await api.post(`/lessons/${lessonId}/tasks`, {
+        ...form,
+        maxScore: Number(form.maxScore) || 100,
+        dueDate: form.dueDate || null,
+      })
+      setTasks((prev) => [...prev, data])
+      setForm({ title: '', description: '', dueDate: '', maxScore: 100 })
+      setShowForm(false)
+      toast.success('Tarea creada')
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al crear la tarea')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(taskId) {
+    if (!confirm('¿Eliminar esta tarea? Se borrarán todas las entregas.')) return
+    setDeleting((d) => ({ ...d, [taskId]: true }))
+    try {
+      await api.delete(`/tasks/${taskId}`)
+      setTasks((prev) => prev.filter((t) => t.id !== taskId))
+      toast.success('Tarea eliminada')
+    } catch {
+      toast.error('Error al eliminar la tarea')
+    } finally {
+      setDeleting((d) => ({ ...d, [taskId]: false }))
+    }
+  }
+
+  const inputClass = 'w-full bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent'
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+          <ClipboardList size={18} className="text-indigo-400" />
+          Tareas de esta lección
+        </h2>
+        {isOwner && (
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            {showForm ? <><X size={14} /> Cancelar</> : <><Plus size={14} /> Nueva tarea</>}
+          </button>
+        )}
+      </div>
+
+      {showForm && isOwner && (
+        <form onSubmit={handleCreate} className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-4 mb-4 space-y-3">
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Título *</label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              className={inputClass}
+              placeholder="Ej: Ejercicios del capítulo 1"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Descripción *</label>
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              className={`${inputClass} resize-y`}
+              placeholder="Instrucciones para el alumno..."
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Fecha límite</label>
+              <input
+                type="datetime-local"
+                value={form.dueDate}
+                onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
+                className={`${inputClass} [color-scheme:dark]`}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Puntaje máximo</label>
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                value={form.maxScore}
+                onChange={(e) => setForm((f) => ({ ...f, maxScore: e.target.value }))}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 py-2.5 rounded-lg text-sm transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Save size={13} /> {saving ? 'Guardando...' : 'Crear tarea'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <div className="space-y-2">
+          {[...Array(2)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-zinc-800 animate-pulse" />)}
+        </div>
+      ) : tasks.length === 0 ? (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-8 text-center">
+          <ClipboardList size={32} className="mx-auto mb-2 text-zinc-700" />
+          <p className="text-zinc-500 text-sm">
+            {isOwner ? 'No hay tareas. Crea una usando el botón de arriba.' : 'No hay tareas para esta lección.'}
+          </p>
+        </div>
+      ) : (
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
+          {tasks.map((task) => (
+            <div key={task.id} className="flex items-center gap-4 p-4 hover:bg-zinc-800/40 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-white truncate">{task.title}</p>
+                <div className="flex items-center gap-3 text-xs text-zinc-500 mt-0.5">
+                  {task.dueDate && (
+                    <span className="flex items-center gap-1">
+                      <Clock size={11} /> {new Date(task.dueDate).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                  <span>Máx: {task.maxScore} pts</span>
+                  {isTeacher && task._count?.submissions > 0 && (
+                    <span className="text-indigo-400">{task._count.submissions} entregas</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {isOwner && (
+                  <button
+                    onClick={() => handleDelete(task.id)}
+                    disabled={deleting[task.id]}
+                    className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-40"
+                    title="Eliminar tarea"
+                  >
+                    {deleting[task.id] ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                  </button>
+                )}
+                <Link
+                  to={`/tasks/${task.id}`}
+                  className="p-1.5 text-zinc-500 hover:text-indigo-400 transition-colors"
+                  title="Ver tarea"
+                >
+                  <ChevronRight size={18} />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function LessonPage() {
   const { id } = useParams()
@@ -365,6 +562,11 @@ export default function LessonPage() {
             <div className="text-zinc-300 leading-relaxed whitespace-pre-wrap">{lesson.content}</div>
           )}
         </div>
+      </div>
+
+      {/* Tasks section */}
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 mt-6">
+        <LessonTasksSection lessonId={id} isOwner={isOwner} />
       </div>
 
       {/* Materials section */}
