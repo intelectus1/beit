@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { LogOut, User, Menu, X, LayoutDashboard, BookOpen, Shield } from 'lucide-react'
+import { LogOut, User, Menu, X, BookOpen, Shield, GraduationCap, Calendar } from 'lucide-react'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   function handleLogout() {
@@ -13,6 +14,15 @@ export default function Navbar() {
     navigate('/')
     setMobileOpen(false)
   }
+
+  function isActive(path) {
+    return location.pathname === path || location.pathname.startsWith(path + '/')
+  }
+
+  const linkClass = (path) =>
+    `flex items-center gap-1.5 text-sm transition-colors ${
+      isActive(path) ? 'text-white' : 'text-zinc-400 hover:text-white'
+    }`
 
   return (
     <nav className="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-white/10">
@@ -34,42 +44,40 @@ export default function Navbar() {
                 {user.role === 'SUPER_ADMIN' && (
                   <Link
                     to="/superadmin"
-                    className="flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                    className={`flex items-center gap-1.5 text-sm transition-colors ${isActive('/superadmin') ? 'text-indigo-300' : 'text-indigo-400 hover:text-indigo-300'}`}
                   >
                     <Shield size={15} />
                     Panel Admin
                   </Link>
                 )}
-                <Link
-                  to="/dashboard"
-                  className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
-                >
-                  <LayoutDashboard size={15} />
-                  Dashboard
+                <Link to="/dashboard" className={linkClass('/dashboard')}>
+                  <GraduationCap size={15} />
+                  Mis Cursos
                 </Link>
-                <Link
-                  to="/courses"
-                  className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
-                >
+                {user.role !== 'SUPER_ADMIN' && (
+                  <Link to="/schedules" className={linkClass('/schedules')}>
+                    <Calendar size={15} />
+                    Horarios
+                  </Link>
+                )}
+                <Link to="/courses" className={linkClass('/courses')}>
                   <BookOpen size={15} />
                   Cursos
                 </Link>
                 <div className="flex items-center gap-3 border-l border-white/10 pl-5 ml-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-                      <User size={13} className="text-indigo-400" />
+                  <Link to="/profile" className="flex items-center gap-2 text-sm hover:opacity-80 transition-opacity">
+                    <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center overflow-hidden">
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={13} className="text-indigo-400" />
+                      )}
                     </div>
                     <span className="text-white font-medium">{user.name}</span>
                     <span className="text-xs bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-full">
-                      {user.role === 'TEACHER'
-                        ? 'Profesor'
-                        : user.role === 'ADMIN'
-                        ? 'Admin'
-                        : user.role === 'SUPER_ADMIN'
-                        ? 'Super Admin'
-                        : 'Alumno'}
+                      {user.role === 'TEACHER' ? 'Profesor' : user.role === 'ADMIN' ? 'Admin' : user.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Alumno'}
                     </span>
-                  </div>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-red-400 transition-colors"
@@ -81,10 +89,7 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="text-sm text-zinc-400 hover:text-white transition-colors"
-                >
+                <Link to="/login" className="text-sm text-zinc-400 hover:text-white transition-colors">
                   Iniciar sesión
                 </Link>
                 <Link
@@ -112,23 +117,21 @@ export default function Navbar() {
           <div className="md:hidden border-t border-white/10 py-4 space-y-1">
             {user ? (
               <>
-                <div className="flex items-center gap-3 px-2 py-3 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-                    <User size={14} className="text-indigo-400" />
+                <Link to="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-2 py-3 mb-2 hover:bg-white/5 rounded-lg transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center overflow-hidden shrink-0">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={14} className="text-indigo-400" />
+                    )}
                   </div>
                   <div>
                     <p className="text-white text-sm font-medium">{user.name}</p>
                     <p className="text-zinc-500 text-xs">
-                      {user.role === 'TEACHER'
-                        ? 'Profesor'
-                        : user.role === 'ADMIN'
-                        ? 'Admin'
-                        : user.role === 'SUPER_ADMIN'
-                        ? 'Super Admin'
-                        : 'Alumno'}
+                      {user.role === 'TEACHER' ? 'Profesor' : user.role === 'ADMIN' ? 'Admin' : user.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Alumno'}
                     </p>
                   </div>
-                </div>
+                </Link>
                 {user.role === 'SUPER_ADMIN' && (
                   <Link
                     to="/superadmin"
@@ -143,8 +146,17 @@ export default function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2 px-2 py-2.5 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                 >
-                  <LayoutDashboard size={16} /> Dashboard
+                  <GraduationCap size={16} /> Mis Cursos
                 </Link>
+                {user.role !== 'SUPER_ADMIN' && (
+                  <Link
+                    to="/schedules"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 px-2 py-2.5 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                  >
+                    <Calendar size={16} /> Horarios
+                  </Link>
+                )}
                 <Link
                   to="/courses"
                   onClick={() => setMobileOpen(false)}

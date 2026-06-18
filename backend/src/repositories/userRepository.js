@@ -1,6 +1,6 @@
 const prisma = require('../config/database');
 
-const PUBLIC_SELECT = { id: true, name: true, email: true, role: true, status: true, createdAt: true };
+const PUBLIC_SELECT = { id: true, name: true, email: true, role: true, status: true, avatarUrl: true, createdAt: true };
 
 async function findByEmail(email) {
   return prisma.user.findUnique({ where: { email } });
@@ -22,6 +22,10 @@ async function updateStatus(id, status) {
   return prisma.user.update({ where: { id }, data: { status }, select: PUBLIC_SELECT });
 }
 
+async function update(id, data) {
+  return prisma.user.update({ where: { id }, data, select: PUBLIC_SELECT });
+}
+
 async function findPendingTeachers() {
   return prisma.user.findMany({
     where: { role: 'TEACHER', status: 'PENDING_APPROVAL' },
@@ -30,4 +34,29 @@ async function findPendingTeachers() {
   });
 }
 
-module.exports = { findByEmail, findById, findRawById, create, updateStatus, findPendingTeachers };
+async function findAllTeachers(search) {
+  const where = { role: 'TEACHER' };
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+  return prisma.user.findMany({
+    where,
+    select: {
+      ...PUBLIC_SELECT,
+      coursesCreated: {
+        select: {
+          id: true,
+          title: true,
+          isPublished: true,
+          _count: { select: { enrollments: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+module.exports = { findByEmail, findById, findRawById, create, updateStatus, update, findPendingTeachers, findAllTeachers };

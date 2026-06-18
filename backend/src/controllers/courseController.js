@@ -1,10 +1,13 @@
+const path = require('path');
+const fs = require('fs');
 const courseRepository = require('../repositories/courseRepository');
 const enrollmentRepository = require('../repositories/enrollmentRepository');
 const taskRepository = require('../repositories/taskRepository');
 const submissionRepository = require('../repositories/submissionRepository');
 
 async function getAllCourses(req, res) {
-  const courses = await courseRepository.findAllPublished();
+  const teacherId = req.user?.role === 'TEACHER' ? req.user.id : null;
+  const courses = await courseRepository.findAllPublished(teacherId);
   res.json(courses);
 }
 
@@ -25,6 +28,9 @@ async function getCourseById(req, res) {
   const { id } = req.params;
   const course = await courseRepository.findById(Number(id));
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
+  if (req.user?.role === 'TEACHER' && course.teacherId !== req.user.id) {
+    return res.status(403).json({ error: 'No tienes permiso para ver este curso' });
+  }
   res.json(course);
 }
 
@@ -195,6 +201,32 @@ async function getMyGrades(req, res) {
   );
 }
 
+async function uploadCourseCover(req, res) {
+  const { id } = req.params;
+  if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
+
+  const course = await courseRepository.findRawById(Number(id));
+  if (!course) {
+    fs.unlink(req.file.path, () => {});
+    return res.status(404).json({ error: 'Curso no encontrado' });
+  }
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
+    fs.unlink(req.file.path, () => {});
+    return res.status(403).json({ error: 'No tienes permiso' });
+  }
+
+  // Delete previous local cover file if it exists
+  if (course.coverImage && course.coverImage.includes('/uploads/covers/')) {
+    const oldFile = path.join(__dirname, '..', '..', 'uploads', 'covers', path.basename(course.coverImage));
+    fs.unlink(oldFile, () => {});
+  }
+
+  const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+  const coverImage = `${baseUrl}/uploads/covers/${req.file.filename}`;
+  const updated = await courseRepository.update(Number(id), { coverImage });
+  res.json(updated);
+}
+
 module.exports = {
   getAllCourses,
   getMyCourses,
@@ -208,4 +240,5 @@ module.exports = {
   updateEnrollmentStatus,
   getCourseStudents,
   getMyGrades,
+  uploadCourseCover,
 };

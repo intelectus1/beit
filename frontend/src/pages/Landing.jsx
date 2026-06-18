@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Home,
   BookOpen,
@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import api from '../lib/api'
 import { TubelightNavbar } from '../components/TubelightNavbar'
+import { FlowHoverButton } from '../components/ui/flow-hover-button'
 import { SplineScene } from '../components/SplineScene'
 import { Spotlight } from '../components/Spotlight'
 import { GooeyText } from '../components/GooeyText'
@@ -100,6 +101,7 @@ const TESTIMONIALS = [
 
 export default function Landing() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const shouldReduceMotion = useReducedMotion()
   const [courses, setCourses] = useState([])
   const [loadingCourses, setLoadingCourses] = useState(true)
@@ -522,12 +524,13 @@ export default function Landing() {
                     Crear cuenta gratis
                     <ArrowRight size={20} />
                   </Link>
-                  <Link
-                    to="/courses"
-                    className="inline-flex items-center gap-2 border border-white/20 text-white/80 px-8 py-4 rounded-full hover:bg-white/10 hover:text-white transition-all text-base"
+                  <FlowHoverButton
+                    icon={<BookOpen size={18} />}
+                    onClick={() => navigate('/courses')}
+                    className="px-8 py-4 rounded-full text-base border-zinc-600 bg-zinc-800/60 text-zinc-200 before:bg-white hover:text-zinc-900"
                   >
                     Explorar cursos
-                  </Link>
+                  </FlowHoverButton>
                 </div>
               )}
             </div>

@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
@@ -84,4 +86,34 @@ async function me(req, res) {
   res.json(user);
 }
 
-module.exports = { register, login, me };
+async function updateProfile(req, res) {
+  const { name, avatarUrl } = req.body;
+  const updateData = {};
+  if (name && name.trim()) updateData.name = name.trim();
+  if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl || null;
+
+  if (!Object.keys(updateData).length) {
+    return res.status(400).json({ error: 'No hay datos para actualizar' });
+  }
+
+  const updated = await userRepository.update(req.user.id, updateData);
+  res.json(updated);
+}
+
+async function uploadAvatar(req, res) {
+  if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
+
+  // Delete previous local avatar if any
+  const current = await userRepository.findById(req.user.id);
+  if (current?.avatarUrl && current.avatarUrl.includes('/uploads/avatars/')) {
+    const oldFile = path.join(__dirname, '..', '..', 'uploads', 'avatars', path.basename(current.avatarUrl));
+    fs.unlink(oldFile, () => {});
+  }
+
+  const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+  const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+  const updated = await userRepository.update(req.user.id, { avatarUrl });
+  res.json(updated);
+}
+
+module.exports = { register, login, me, updateProfile, uploadAvatar };

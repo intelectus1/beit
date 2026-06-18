@@ -14,6 +14,8 @@ import LessonPage from './pages/LessonPage';
 import CreateTaskPage from './pages/CreateTaskPage';
 import TaskPage from './pages/TaskPage';
 import SuperAdminPage from './pages/SuperAdminPage';
+import SchedulesPage from './pages/SchedulesPage';
+import ProfilePage from './pages/ProfilePage';
 
 function PrivateRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -47,6 +49,8 @@ function AppRoutes() {
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/courses/:id" element={<CourseDetailPage />} />
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+          <Route path="/schedules" element={<PrivateRoute><SchedulesPage /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/courses/create" element={<PrivateRoute><CreateCoursePage /></PrivateRoute>} />
           <Route path="/courses/:courseId/lessons/create" element={<PrivateRoute><CreateLessonPage /></PrivateRoute>} />
           <Route path="/lessons/:id" element={<PrivateRoute><LessonPage /></PrivateRoute>} />

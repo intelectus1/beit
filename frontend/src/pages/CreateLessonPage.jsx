@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 
 export default function CreateLessonPage() {
   const { courseId } = useParams()
-  const [form, setForm] = useState({ title: '', content: '', videoUrl: '', order: 0 })
+  const [form, setForm] = useState({ title: '', description: '', content: '', videoUrl: '' })
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -46,6 +46,18 @@ export default function CreateLessonPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-1.5">
+              Descripción corta <span className="text-zinc-600">(opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className={inputClass}
+              placeholder="Resumen breve de la lección"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1.5">
               Contenido <span className="text-red-400">*</span>
             </label>
             <textarea
@@ -69,16 +81,6 @@ export default function CreateLessonPage() {
               placeholder="https://youtube.com/..."
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5">Orden</label>
-            <input
-              type="number"
-              min={0}
-              value={form.order}
-              onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
-              className={inputClass}
-            />
-          </div>
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -92,7 +94,7 @@ export default function CreateLessonPage() {
               disabled={loading}
               className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Guardando...' : 'Crear lección'}
+              {loading ? 'Creando...' : 'Crear lección'}
             </button>
           </div>
         </form>

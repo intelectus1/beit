@@ -38,6 +38,7 @@ model User {
   password  String
   role      Role       @default(STUDENT)
   status    UserStatus @default(ACTIVE)
+  avatarUrl String?
   createdAt DateTime   @default(now())
 
   coursesCreated Course[]     @relation("TeacherCourses")
@@ -56,23 +57,27 @@ model Course {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  teacher     User         @relation("TeacherCourses", fields: [teacherId], references: [id])
-  lessons     Lesson[]
+  teacher    User             @relation("TeacherCourses", fields: [teacherId], references: [id])
+  lessons    Lesson[]
   enrollments Enrollment[]
-  tasks       Task[]
+  tasks      Task[]
+  schedules  ClassSchedule[]
+  curriculum CurriculumItem[]
 }
 
 model Lesson {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  order     Int      @default(0)
-  videoUrl  String?
-  courseId  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  content     String
+  order       Int      @default(0)
+  videoUrl    String?
+  courseId    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  materials LessonMaterial[]
 }
 
 model Enrollment {
@@ -117,4 +122,41 @@ model Submission {
   student User @relation(fields: [studentId], references: [id])
 
   @@unique([taskId, studentId])
+}
+
+model ClassSchedule {
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  dayOfWeek String
+  startTime String
+  endTime   String
+  modality  String
+  classLink String?
+  location  String?
+  createdAt DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CurriculumItem {
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  title     String
+  completed Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model LessonMaterial {
+  id           Int      @id @default(autoincrement())
+  lessonId     Int
+  filename     String
+  originalName String
+  size         Int
+  mimeType     String
+  uploadedAt   DateTime @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 }

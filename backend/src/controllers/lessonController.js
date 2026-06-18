@@ -4,7 +4,7 @@ const lessonRepository = require('../repositories/lessonRepository');
 
 async function createLesson(req, res) {
   const { courseId } = req.params;
-  const { title, content, videoUrl, order } = req.body;
+  const { title, description, content, videoUrl, order } = req.body;
 
   if (!title || !content) return res.status(400).json({ error: 'Título y contenido son requeridos' });
 
@@ -14,15 +14,23 @@ async function createLesson(req, res) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
+  const existing = await lessonRepository.findByCourse(Number(courseId));
+  const nextOrder = order !== undefined ? Number(order) : existing.length;
+
   const lesson = await lessonRepository.create({
-    title, content, videoUrl, order: order || 0, courseId: Number(courseId),
+    title,
+    description: description || null,
+    content,
+    videoUrl: videoUrl || null,
+    order: nextOrder,
+    courseId: Number(courseId),
   });
   res.status(201).json(lesson);
 }
 
 async function updateLesson(req, res) {
   const { id } = req.params;
-  const { title, content, videoUrl, order } = req.body;
+  const { title, description, content, videoUrl, order } = req.body;
 
   const lesson = await lessonRepository.findById(Number(id));
   if (!lesson) return res.status(404).json({ error: 'Lección no encontrada' });
@@ -30,7 +38,14 @@ async function updateLesson(req, res) {
     return res.status(403).json({ error: 'No tienes permiso' });
   }
 
-  const updated = await lessonRepository.update(Number(id), { title, content, videoUrl, order });
+  const updateData = {};
+  if (title !== undefined) updateData.title = title;
+  if (description !== undefined) updateData.description = description;
+  if (content !== undefined) updateData.content = content;
+  if (videoUrl !== undefined) updateData.videoUrl = videoUrl || null;
+  if (order !== undefined) updateData.order = Number(order);
+
+  const updated = await lessonRepository.update(Number(id), updateData);
   res.json(updated);
 }
 
@@ -54,7 +69,7 @@ async function getLessonById(req, res) {
   const { role, id: userId } = req.user;
 
   if (role === 'STUDENT') {
-    const enrollment = await enrollmentRepository.findByUserAndCourse(userId, lesson.courseId);
+    const enrollment = await enrollmentRepository.findByUserAndCourse(userId, lesson.course.id);
     if (!enrollment || enrollment.status !== 'ACCEPTED') {
       return res.status(403).json({ error: 'No tienes acceso a este curso' });
     }
@@ -63,7 +78,25 @@ async function getLessonById(req, res) {
   }
 
   const { course: _course, ...lessonData } = lesson;
-  res.json(lessonData);
+  const isOwner = lesson.course.teacherId === userId || ['ADMIN', 'SUPER_ADMIN'].includes(role);
+  res.json({ ...lessonData, courseId: lesson.course.id, isOwner });
 }
 
-module.exports = { createLesson, updateLesson, deleteLesson, getLessonById };
+async function reorderLessons(req, res) {
+  const { courseId } = req.params;
+  const { lessonIds } = req.body;
+
+  if (!Array.isArray(lessonIds)) return res.status(400).json({ error: 'lessonIds debe ser un array' });
+
+  const course = await courseRepository.findRawById(Number(courseId));
+  if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
+  if (course.teacherId !== req.user.id && !['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'No tienes permiso' });
+  }
+
+  await lessonRepository.reorderMany(lessonIds.map((id, index) => ({ id: Number(id), order: index })));
+  const lessons = await lessonRepository.findByCourse(Number(courseId));
+  res.json(lessons);
+}
+
+module.exports = { createLesson, updateLesson, deleteLesson, getLessonById, reorderLessons };
