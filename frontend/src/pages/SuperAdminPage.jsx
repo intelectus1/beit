@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
@@ -515,6 +516,13 @@ function CoursesTab() {
               }`}>
                 {course.isPublished ? 'Publicado' : 'Borrador'}
               </span>
+              <Link
+                to={`/courses/${course.id}`}
+                className="p-1.5 text-zinc-600 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors shrink-0"
+                title="Ver y editar curso"
+              >
+                <Eye size={15} />
+              </Link>
               <button
                 onClick={() => setDeletingCourse(course)}
                 className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
