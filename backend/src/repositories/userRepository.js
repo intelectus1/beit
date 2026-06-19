@@ -3,11 +3,11 @@ const prisma = require('../config/database');
 const PUBLIC_SELECT = { id: true, name: true, email: true, role: true, status: true, avatarUrl: true, createdAt: true };
 
 async function findByEmail(email) {
-  return prisma.user.findUnique({ where: { email } });
+  return prisma.user.findFirst({ where: { email, deletedAt: null } });
 }
 
 async function findById(id) {
-  return prisma.user.findUnique({ where: { id }, select: PUBLIC_SELECT });
+  return prisma.user.findFirst({ where: { id, deletedAt: null }, select: PUBLIC_SELECT });
 }
 
 async function findRawById(id) {
@@ -28,14 +28,14 @@ async function update(id, data) {
 
 async function findPendingTeachers() {
   return prisma.user.findMany({
-    where: { role: 'TEACHER', status: 'PENDING_APPROVAL' },
+    where: { role: 'TEACHER', status: 'PENDING_APPROVAL', deletedAt: null },
     select: PUBLIC_SELECT,
     orderBy: { createdAt: 'asc' },
   });
 }
 
 async function findAllTeachers(search) {
-  const where = { role: 'TEACHER' };
+  const where = { role: 'TEACHER', deletedAt: null };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -60,7 +60,7 @@ async function findAllTeachers(search) {
 }
 
 async function findAllStudents(search) {
-  const where = { role: 'STUDENT' };
+  const where = { role: 'STUDENT', deletedAt: null };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -82,4 +82,31 @@ async function findAllStudents(search) {
   });
 }
 
-module.exports = { findByEmail, findById, findRawById, create, updateStatus, update, findPendingTeachers, findAllTeachers, findAllStudents };
+async function findDeletedStudents(search) {
+  const where = { role: 'STUDENT', deletedAt: { not: null } };
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+  return prisma.user.findMany({
+    where,
+    select: { ...PUBLIC_SELECT, deletedAt: true },
+    orderBy: { deletedAt: 'desc' },
+  });
+}
+
+async function softDelete(id) {
+  return prisma.user.update({ where: { id }, data: { deletedAt: new Date() }, select: PUBLIC_SELECT });
+}
+
+async function restore(id) {
+  return prisma.user.update({ where: { id }, data: { deletedAt: null }, select: PUBLIC_SELECT });
+}
+
+module.exports = {
+  findByEmail, findById, findRawById, create, updateStatus, update,
+  findPendingTeachers, findAllTeachers, findAllStudents,
+  findDeletedStudents, softDelete, restore,
+};

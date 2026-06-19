@@ -3,6 +3,7 @@ const fs = require('fs');
 const userRepository = require('../repositories/userRepository');
 const courseRepository = require('../repositories/courseRepository');
 const materialRepository = require('../repositories/materialRepository');
+const enrollmentRepository = require('../repositories/enrollmentRepository');
 
 async function getPendingTeachers(req, res) {
   const teachers = await userRepository.findPendingTeachers();
@@ -76,6 +77,34 @@ async function getAllStudents(req, res) {
   res.json(students);
 }
 
+async function deleteStudent(req, res) {
+  const { id } = req.params;
+  const user = await userRepository.findRawById(Number(id));
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
+  if (user.deletedAt) return res.status(409).json({ error: 'El alumno ya está eliminado' });
+
+  await userRepository.softDelete(Number(id));
+  res.json({ message: 'Alumno eliminado (puede restaurarse desde la papelera)' });
+}
+
+async function getDeletedStudents(req, res) {
+  const { search } = req.query;
+  const students = await userRepository.findDeletedStudents(search || '');
+  res.json(students);
+}
+
+async function restoreStudent(req, res) {
+  const { id } = req.params;
+  const user = await userRepository.findRawById(Number(id));
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
+  if (!user.deletedAt) return res.status(409).json({ error: 'El alumno no está eliminado' });
+
+  const restored = await userRepository.restore(Number(id));
+  res.json(restored);
+}
+
 async function getAllCoursesAdmin(req, res) {
   const courses = await courseRepository.findAll();
   res.json(courses);
@@ -119,6 +148,9 @@ module.exports = {
   updateTeacher,
   toggleTeacherStatus,
   getAllStudents,
+  deleteStudent,
+  getDeletedStudents,
+  restoreStudent,
   getAllCoursesAdmin,
   deleteCourse,
 };

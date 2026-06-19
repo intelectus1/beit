@@ -9,6 +9,9 @@ const {
   updateTeacher,
   toggleTeacherStatus,
   getAllStudents,
+  deleteStudent,
+  getDeletedStudents,
+  restoreStudent,
   getAllCoursesAdmin,
   deleteCourse,
 } = require('../controllers/adminController');
@@ -25,6 +28,10 @@ router.put('/teachers/:id/toggle-status', toggleTeacherStatus);
 router.put('/teachers/:id', updateTeacher);
 
 router.get('/students', getAllStudents);
+router.delete('/students/:id', deleteStudent);
+router.get('/students/deleted', getDeletedStudents);
+router.put('/students/:id/restore', restoreStudent);
+
 router.get('/courses', getAllCoursesAdmin);
 router.delete('/courses/:id', deleteCourse);
 

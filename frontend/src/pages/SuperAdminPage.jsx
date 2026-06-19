@@ -7,6 +7,7 @@ import {
   Shield, User, Check, X, Clock, RefreshCw, Users, BookOpen,
   Search, Edit2, Power, ChevronDown, ChevronUp, GraduationCap,
   LayoutGrid, CheckCircle, XCircle, Eye, Trash2, AlertTriangle,
+  RotateCcw, UserX,
 } from 'lucide-react'
 import { FlowHoverButton } from '../components/ui/flow-hover-button'
 
@@ -223,9 +224,14 @@ function PendingTab({ teachers, loading, processing, onAction, onRefresh }) {
 // ── Students Tab ──────────────────────────────────────────────────────────────
 function StudentsTab() {
   const [students, setStudents] = useState([])
+  const [deletedStudents, setDeletedStudents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deletedLoading, setDeletedLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState({})
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [deleting, setDeleting] = useState({})
+  const [restoring, setRestoring] = useState({})
 
   const fetchStudents = useCallback((q = '') => {
     setLoading(true)
@@ -235,11 +241,51 @@ function StudentsTab() {
       .finally(() => setLoading(false))
   }, [])
 
+  const fetchDeletedStudents = useCallback(() => {
+    setDeletedLoading(true)
+    api.get('/admin/students/deleted')
+      .then((res) => setDeletedStudents(res.data))
+      .catch(() => toast.error('Error al cargar papelera'))
+      .finally(() => setDeletedLoading(false))
+  }, [])
+
   useEffect(() => { fetchStudents() }, [])
   useEffect(() => {
     const t = setTimeout(() => fetchStudents(search), 400)
     return () => clearTimeout(t)
   }, [search])
+
+  useEffect(() => {
+    if (showDeleted) fetchDeletedStudents()
+  }, [showDeleted])
+
+  async function handleDelete(studentId) {
+    if (!confirm('¿Eliminar este alumno? Podrá restaurarlo desde la papelera.')) return
+    setDeleting((d) => ({ ...d, [studentId]: true }))
+    try {
+      await api.delete(`/admin/students/${studentId}`)
+      setStudents((prev) => prev.filter((s) => s.id !== studentId))
+      toast.success('Alumno eliminado')
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al eliminar')
+    } finally {
+      setDeleting((d) => ({ ...d, [studentId]: false }))
+    }
+  }
+
+  async function handleRestore(studentId) {
+    setRestoring((r) => ({ ...r, [studentId]: true }))
+    try {
+      await api.put(`/admin/students/${studentId}/restore`)
+      setDeletedStudents((prev) => prev.filter((s) => s.id !== studentId))
+      toast.success('Alumno restaurado')
+      fetchStudents(search)
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al restaurar')
+    } finally {
+      setRestoring((r) => ({ ...r, [studentId]: false }))
+    }
+  }
 
   const accepted = (s) => s.enrollments?.filter((e) => e.status === 'ACCEPTED').length || 0
   const pending = (s) => s.enrollments?.filter((e) => e.status === 'PENDING').length || 0
@@ -255,87 +301,171 @@ function StudentsTab() {
             className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-        <FlowHoverButton onClick={() => fetchStudents(search)} disabled={loading} variant="secondary" icon={<RefreshCw size={14} className={loading ? 'animate-spin' : ''} />} className="text-sm px-3 py-2.5">
+        <button
+          onClick={() => setShowDeleted((v) => !v)}
+          className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
+            showDeleted
+              ? 'bg-red-500/20 border-red-500/40 text-red-400'
+              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+          }`}
+        >
+          <UserX size={14} />
+          Papelera {deletedStudents.length > 0 && !showDeleted && (
+            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{deletedStudents.length}</span>
+          )}
+        </button>
+        <FlowHoverButton
+          onClick={() => showDeleted ? fetchDeletedStudents() : fetchStudents(search)}
+          disabled={loading || deletedLoading}
+          variant="secondary"
+          icon={<RefreshCw size={14} className={(loading || deletedLoading) ? 'animate-spin' : ''} />}
+          className="text-sm px-3 py-2.5"
+        >
           Actualizar
         </FlowHoverButton>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {[
-          { label: 'Total alumnos', value: students.length, color: 'text-white' },
-          { label: 'Con cursos', value: students.filter((s) => accepted(s) > 0).length, color: 'text-green-400' },
-          { label: 'Sin cursos', value: students.filter((s) => accepted(s) === 0).length, color: 'text-zinc-500' },
-        ].map((s) => (
-          <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
-            <p className={`text-xl font-bold ${s.color}`}>{loading ? '—' : s.value}</p>
-            <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+      {/* Papelera - alumnos eliminados */}
+      {showDeleted ? (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="bg-red-500/20 p-1.5 rounded-lg">
+              <UserX size={15} className="text-red-400" />
+            </div>
+            <h3 className="text-sm font-semibold text-red-400">Alumnos eliminados (Soft Delete)</h3>
           </div>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
-      ) : students.length === 0 ? (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-12 text-center">
-          <GraduationCap size={36} className="mx-auto mb-3 text-zinc-700" />
-          <p className="text-zinc-400">No se encontraron alumnos</p>
-        </div>
-      ) : (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
-          {students.map((student) => {
-            const acc = accepted(student)
-            const pend = pending(student)
-            return (
-              <div key={student.id}>
-                <div
-                  className="flex items-center justify-between p-4 gap-3 hover:bg-zinc-800/30 transition-colors cursor-pointer"
-                  onClick={() => setExpanded((e) => ({ ...e, [student.id]: !e[student.id] }))}
-                >
+          {deletedLoading ? (
+            <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
+          ) : deletedStudents.length === 0 ? (
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-10 text-center">
+              <RotateCcw size={32} className="mx-auto mb-3 text-zinc-700" />
+              <p className="text-zinc-400 text-sm">La papelera está vacía</p>
+            </div>
+          ) : (
+            <div className="bg-zinc-900 rounded-xl border border-red-500/20 divide-y divide-zinc-800 overflow-hidden">
+              {deletedStudents.map((student) => (
+                <div key={student.id} className="flex items-center justify-between p-4 gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-                      {student.avatarUrl
-                        ? <img src={student.avatarUrl} alt={student.name} className="w-full h-full object-cover" />
-                        : <GraduationCap size={15} className="text-indigo-400" />
-                      }
+                    <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                      <GraduationCap size={15} className="text-red-400/60" />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-white truncate">{student.name}</p>
-                      <p className="text-sm text-zinc-500 truncate">{student.email}</p>
+                      <p className="font-medium text-zinc-400 truncate line-through">{student.name}</p>
+                      <p className="text-sm text-zinc-600 truncate">{student.email}</p>
+                      <p className="text-xs text-red-400/60 mt-0.5">
+                        Eliminado: {new Date(student.deletedAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="hidden sm:flex items-center gap-3 text-xs">
-                      <span className="flex items-center gap-1 text-green-400"><CheckCircle size={11} /> {acc} cursos</span>
-                      {pend > 0 && <span className="flex items-center gap-1 text-yellow-400"><Clock size={11} /> {pend} pend.</span>}
+                  <button
+                    onClick={() => handleRestore(student.id)}
+                    disabled={restoring[student.id]}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 rounded-lg text-sm transition-colors disabled:opacity-50 shrink-0"
+                  >
+                    {restoring[student.id]
+                      ? <span className="w-3 h-3 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
+                      : <RotateCcw size={13} />
+                    }
+                    Restaurar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[
+              { label: 'Total alumnos', value: students.length, color: 'text-white' },
+              { label: 'Con cursos', value: students.filter((s) => accepted(s) > 0).length, color: 'text-green-400' },
+              { label: 'Sin cursos', value: students.filter((s) => accepted(s) === 0).length, color: 'text-zinc-500' },
+            ].map((s) => (
+              <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
+                <p className={`text-xl font-bold ${s.color}`}>{loading ? '—' : s.value}</p>
+                <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {loading ? (
+            <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
+          ) : students.length === 0 ? (
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-12 text-center">
+              <GraduationCap size={36} className="mx-auto mb-3 text-zinc-700" />
+              <p className="text-zinc-400">No se encontraron alumnos</p>
+            </div>
+          ) : (
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
+              {students.map((student) => {
+                const acc = accepted(student)
+                const pend = pending(student)
+                return (
+                  <div key={student.id}>
+                    <div className="flex items-center justify-between p-4 gap-3 hover:bg-zinc-800/30 transition-colors">
+                      <div
+                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                        onClick={() => setExpanded((e) => ({ ...e, [student.id]: !e[student.id] }))}
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                          {student.avatarUrl
+                            ? <img src={student.avatarUrl} alt={student.name} className="w-full h-full object-cover" />
+                            : <GraduationCap size={15} className="text-indigo-400" />
+                          }
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-white truncate">{student.name}</p>
+                          <p className="text-sm text-zinc-500 truncate">{student.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="hidden sm:flex items-center gap-3 text-xs">
+                          <span className="flex items-center gap-1 text-green-400"><CheckCircle size={11} /> {acc} cursos</span>
+                          {pend > 0 && <span className="flex items-center gap-1 text-yellow-400"><Clock size={11} /> {pend} pend.</span>}
+                        </div>
+                        <button
+                          onClick={() => handleDelete(student.id)}
+                          disabled={deleting[student.id]}
+                          className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-40"
+                          title="Eliminar alumno (se puede restaurar)"
+                        >
+                          {deleting[student.id]
+                            ? <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin inline-block" />
+                            : <Trash2 size={14} />
+                          }
+                        </button>
+                        {student.enrollments?.length > 0 && (
+                          <button onClick={() => setExpanded((e) => ({ ...e, [student.id]: !e[student.id] }))} className="p-1 text-zinc-600 hover:text-white">
+                            {expanded[student.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {student.enrollments?.length > 0 && (
-                      expanded[student.id] ? <ChevronUp size={14} className="text-zinc-500" /> : <ChevronDown size={14} className="text-zinc-500" />
+                    {expanded[student.id] && student.enrollments?.length > 0 && (
+                      <div className="border-t border-zinc-800 bg-zinc-950/50 px-4 py-3">
+                        <p className="text-xs text-zinc-600 mb-2 uppercase tracking-wider">Inscripciones</p>
+                        <div className="space-y-1.5">
+                          {student.enrollments.map((enr) => (
+                            <div key={enr.id} className="flex items-center justify-between gap-2">
+                              <span className="text-sm text-zinc-300 truncate">{enr.course?.title}</span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded border ${
+                                enr.status === 'ACCEPTED' ? 'text-green-400 bg-green-500/10 border-green-500/20'
+                                : enr.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+                                : 'text-red-400 bg-red-500/10 border-red-500/20'
+                              }`}>
+                                {enr.status === 'ACCEPTED' ? 'Aceptado' : enr.status === 'PENDING' ? 'Pendiente' : 'Rechazado'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-                {expanded[student.id] && student.enrollments?.length > 0 && (
-                  <div className="border-t border-zinc-800 bg-zinc-950/50 px-4 py-3">
-                    <p className="text-xs text-zinc-600 mb-2 uppercase tracking-wider">Inscripciones</p>
-                    <div className="space-y-1.5">
-                      {student.enrollments.map((enr) => (
-                        <div key={enr.id} className="flex items-center justify-between gap-2">
-                          <span className="text-sm text-zinc-300 truncate">{enr.course?.title}</span>
-                          <span className={`text-xs px-1.5 py-0.5 rounded border ${
-                            enr.status === 'ACCEPTED' ? 'text-green-400 bg-green-500/10 border-green-500/20'
-                            : enr.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
-                            : 'text-red-400 bg-red-500/10 border-red-500/20'
-                          }`}>
-                            {enr.status === 'ACCEPTED' ? 'Aceptado' : enr.status === 'PENDING' ? 'Pendiente' : 'Rechazado'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   )

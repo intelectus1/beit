@@ -40,6 +40,7 @@ model User {
   status    UserStatus @default(ACTIVE)
   avatarUrl String?
   createdAt DateTime   @default(now())
+  deletedAt DateTime?
 
   coursesCreated Course[]     @relation("TeacherCourses")
   enrollments    Enrollment[]
