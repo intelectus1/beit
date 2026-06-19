@@ -12,6 +12,7 @@ const adminRoutes = require('./routes/admin');
 const scheduleRoutes = require('./routes/schedules');
 
 const app = express();
+app.set('trust proxy', 1); // Railway/Vercel terminate SSL — trust X-Forwarded-Proto
 const PORT = process.env.PORT || 5000;
 
 // Ensure upload directories exist
