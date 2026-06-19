@@ -41,16 +41,22 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-async function startServer() {
-  // Idempotent migration: add deletedAt to User if not present
+async function runMigration() {
   const prisma = require('./config/database');
-  try {
-    await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)');
-    console.log('[migration] deletedAt column ensured');
-  } catch (e) {
-    console.warn('[migration] skipped:', e.message);
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)');
+      console.log('[migration] deletedAt column ensured');
+      return;
+    } catch (e) {
+      console.warn(`[migration] attempt ${attempt} failed: ${e.message}`);
+      if (attempt < 5) await new Promise((r) => setTimeout(r, 3000));
+    }
   }
+}
 
+async function startServer() {
+  await runMigration();
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
   });
