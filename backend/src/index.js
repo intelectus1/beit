@@ -43,15 +43,12 @@ app.use((err, req, res, next) => {
 
 async function runMigration() {
   const prisma = require('./config/database');
-  for (let attempt = 1; attempt <= 5; attempt++) {
-    try {
-      await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)');
-      console.log('[migration] deletedAt column ensured');
-      return;
-    } catch (e) {
-      console.warn(`[migration] attempt ${attempt} failed: ${e.message}`);
-      if (attempt < 5) await new Promise((r) => setTimeout(r, 3000));
-    }
+  try {
+    // $queryRaw template literal has better support with @prisma/adapter-pg than $executeRawUnsafe
+    await prisma.$queryRaw`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)`;
+    console.log('[migration] deletedAt column ensured');
+  } catch (e) {
+    console.warn('[migration] skipped:', e.message);
   }
 }
 
