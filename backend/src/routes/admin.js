@@ -28,8 +28,8 @@ router.put('/teachers/:id/toggle-status', toggleTeacherStatus);
 router.put('/teachers/:id', updateTeacher);
 
 router.get('/students', getAllStudents);
-router.delete('/students/:id', deleteStudent);
 router.get('/students/deleted', getDeletedStudents);
+router.delete('/students/:id', deleteStudent);
 router.put('/students/:id/restore', restoreStudent);
 
 router.get('/courses', getAllCoursesAdmin);
