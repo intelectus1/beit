@@ -41,10 +41,13 @@ app.get('/api/_migrate', async (req, res) => {
   if (req.query.secret !== 'mig_deletedAt_2024') return res.status(403).json({ error: 'forbidden' });
   const prisma = require('./config/database');
   try {
+    // Verify DML works first
+    const testUser = await prisma.user.findFirst({ select: { id: true } });
+    // Try DDL
     const result = await prisma.$executeRaw`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)`;
-    res.json({ ok: true, message: 'deletedAt column ensured', result });
+    res.json({ ok: true, message: 'deletedAt column ensured', result, testUser: testUser?.id });
   } catch (e) {
-    res.status(500).json({ error: e.message, code: e.code });
+    res.status(500).json({ error: e.message, code: e.code, stack: e.stack?.split('\n').slice(0, 5) });
   }
 });
 
