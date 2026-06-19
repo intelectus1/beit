@@ -36,42 +36,11 @@ app.use('/api/schedules', scheduleRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// TEMP: one-time migration endpoint — remove after running
-app.get('/api/_migrate', async (req, res) => {
-  if (req.query.secret !== 'mig_deletedAt_2024') return res.status(403).json({ error: 'forbidden' });
-  const prisma = require('./config/database');
-  try {
-    // Verify DML works first
-    const testUser = await prisma.user.findFirst({ select: { id: true } });
-    // Try DDL
-    const result = await prisma.$executeRaw`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)`;
-    res.json({ ok: true, message: 'deletedAt column ensured', result, testUser: testUser?.id });
-  } catch (e) {
-    res.status(500).json({ error: e.message, code: e.code, stack: e.stack?.split('\n').slice(0, 5) });
-  }
-});
-
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-async function runMigration() {
-  const prisma = require('./config/database');
-  try {
-    // $queryRaw template literal has better support with @prisma/adapter-pg than $executeRawUnsafe
-    await prisma.$queryRaw`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)`;
-    console.log('[migration] deletedAt column ensured');
-  } catch (e) {
-    console.warn('[migration] skipped:', e.message);
-  }
-}
-
-async function startServer() {
-  await runMigration();
-  app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  });
-}
-
-startServer();
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});

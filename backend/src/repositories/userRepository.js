@@ -2,20 +2,20 @@ const prisma = require('../config/database');
 
 const PUBLIC_SELECT = { id: true, name: true, email: true, role: true, status: true, avatarUrl: true, createdAt: true };
 
+// findByEmail needs password for auth — explicit select avoids selecting deletedAt (column may not exist in prod)
 async function findByEmail(email) {
-  const user = await prisma.user.findUnique({ where: { email } });
-  return user && !user.deletedAt ? user : null;
+  return prisma.user.findUnique({
+    where: { email },
+    select: { id: true, name: true, email: true, password: true, role: true, status: true, avatarUrl: true, createdAt: true },
+  });
 }
 
 async function findById(id) {
-  const user = await prisma.user.findUnique({ where: { id }, select: { ...PUBLIC_SELECT, deletedAt: true } });
-  if (!user || user.deletedAt) return null;
-  const { deletedAt: _d, ...rest } = user;
-  return rest;
+  return prisma.user.findUnique({ where: { id }, select: PUBLIC_SELECT });
 }
 
 async function findRawById(id) {
-  return prisma.user.findUnique({ where: { id } });
+  return prisma.user.findUnique({ where: { id }, select: { ...PUBLIC_SELECT, password: true } });
 }
 
 async function create(data) {
@@ -32,14 +32,14 @@ async function update(id, data) {
 
 async function findPendingTeachers() {
   return prisma.user.findMany({
-    where: { role: 'TEACHER', status: 'PENDING_APPROVAL', deletedAt: null },
+    where: { role: 'TEACHER', status: 'PENDING_APPROVAL' },
     select: PUBLIC_SELECT,
     orderBy: { createdAt: 'asc' },
   });
 }
 
 async function findAllTeachers(search) {
-  const where = { role: 'TEACHER', deletedAt: null };
+  const where = { role: 'TEACHER' };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -64,7 +64,7 @@ async function findAllTeachers(search) {
 }
 
 async function findAllStudents(search) {
-  const where = { role: 'STUDENT', deletedAt: null };
+  const where = { role: 'STUDENT' };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -86,6 +86,8 @@ async function findAllStudents(search) {
   });
 }
 
+// Soft delete functions — these require the deletedAt column in the DB.
+// Until the column is added via Railway Dashboard, these will return errors to the admin UI.
 async function findDeletedStudents(search) {
   const where = { role: 'STUDENT', deletedAt: { not: null } };
   if (search) {

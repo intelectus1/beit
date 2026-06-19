@@ -78,31 +78,39 @@ async function getAllStudents(req, res) {
 }
 
 async function deleteStudent(req, res) {
-  const { id } = req.params;
-  const user = await userRepository.findRawById(Number(id));
-  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-  if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
-  if (user.deletedAt) return res.status(409).json({ error: 'El alumno ya está eliminado' });
-
-  await userRepository.softDelete(Number(id));
-  res.json({ message: 'Alumno eliminado (puede restaurarse desde la papelera)' });
+  try {
+    const { id } = req.params;
+    const user = await userRepository.findRawById(Number(id));
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
+    await userRepository.softDelete(Number(id));
+    res.json({ message: 'Alumno eliminado (puede restaurarse desde la papelera)' });
+  } catch (e) {
+    res.status(500).json({ error: 'Función no disponible hasta agregar columna deletedAt en la base de datos' });
+  }
 }
 
 async function getDeletedStudents(req, res) {
-  const { search } = req.query;
-  const students = await userRepository.findDeletedStudents(search || '');
-  res.json(students);
+  try {
+    const { search } = req.query;
+    const students = await userRepository.findDeletedStudents(search || '');
+    res.json(students);
+  } catch (e) {
+    res.status(500).json({ error: 'Función no disponible hasta agregar columna deletedAt en la base de datos' });
+  }
 }
 
 async function restoreStudent(req, res) {
-  const { id } = req.params;
-  const user = await userRepository.findRawById(Number(id));
-  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-  if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
-  if (!user.deletedAt) return res.status(409).json({ error: 'El alumno no está eliminado' });
-
-  const restored = await userRepository.restore(Number(id));
-  res.json(restored);
+  try {
+    const { id } = req.params;
+    const user = await userRepository.findRawById(Number(id));
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
+    const restored = await userRepository.restore(Number(id));
+    res.json(restored);
+  } catch (e) {
+    res.status(500).json({ error: 'Función no disponible hasta agregar columna deletedAt en la base de datos' });
+  }
 }
 
 async function getAllCoursesAdmin(req, res) {
