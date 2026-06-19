@@ -3,11 +3,15 @@ const prisma = require('../config/database');
 const PUBLIC_SELECT = { id: true, name: true, email: true, role: true, status: true, avatarUrl: true, createdAt: true };
 
 async function findByEmail(email) {
-  return prisma.user.findFirst({ where: { email, deletedAt: null } });
+  const user = await prisma.user.findUnique({ where: { email } });
+  return user && !user.deletedAt ? user : null;
 }
 
 async function findById(id) {
-  return prisma.user.findFirst({ where: { id, deletedAt: null }, select: PUBLIC_SELECT });
+  const user = await prisma.user.findUnique({ where: { id }, select: { ...PUBLIC_SELECT, deletedAt: true } });
+  if (!user || user.deletedAt) return null;
+  const { deletedAt: _d, ...rest } = user;
+  return rest;
 }
 
 async function findRawById(id) {
