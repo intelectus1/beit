@@ -40,7 +40,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/api/_migrate', async (req, res) => {
   if (req.query.secret !== 'mig_deletedAt_2024') return res.status(403).json({ error: 'forbidden' });
   const { Client } = require('pg');
-  const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: false });
+  const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
   try {
     await client.connect();
     await client.query('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)');
