@@ -33,7 +33,7 @@ function CourseCard({ course, isTeacher, index }) {
       <div className="bg-zinc-900 rounded-xl border border-zinc-800 group-hover:border-zinc-700 transition-all overflow-hidden h-full">
         <div className="h-28 relative overflow-hidden">
           {course.coverImage ? (
-            <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
+            <img src={course.coverImage.replace(/^http:\/\//, 'https://')} alt={course.title} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
               <BookOpen size={36} className="text-white opacity-80" />
