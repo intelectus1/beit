@@ -39,16 +39,12 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 // TEMP: one-time migration endpoint — remove after running
 app.get('/api/_migrate', async (req, res) => {
   if (req.query.secret !== 'mig_deletedAt_2024') return res.status(403).json({ error: 'forbidden' });
-  const { Client } = require('pg');
-  const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  const prisma = require('./config/database');
   try {
-    await client.connect();
-    await client.query('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)');
-    await client.end();
-    res.json({ ok: true, message: 'deletedAt column ensured' });
+    const result = await prisma.$executeRaw`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)`;
+    res.json({ ok: true, message: 'deletedAt column ensured', result });
   } catch (e) {
-    await client.end().catch(() => {});
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: e.message, code: e.code });
   }
 });
 
