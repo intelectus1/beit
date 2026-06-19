@@ -43,15 +43,12 @@ app.use((err, req, res, next) => {
 
 async function startServer() {
   // Idempotent migration: add deletedAt to User if not present
-  const { Pool } = require('pg');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const prisma = require('./config/database');
   try {
-    await pool.query('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)');
+    await prisma.$executeRawUnsafe('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)');
     console.log('[migration] deletedAt column ensured');
   } catch (e) {
     console.warn('[migration] skipped:', e.message);
-  } finally {
-    await pool.end();
   }
 
   app.listen(PORT, () => {
