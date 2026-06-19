@@ -103,4 +103,37 @@ async function deleteMaterial(req, res) {
   res.json({ message: 'Material eliminado' });
 }
 
-module.exports = { getMaterials, uploadMaterial, downloadMaterial, deleteMaterial };
+async function streamMaterial(req, res) {
+  const { lessonId, materialId } = req.params;
+  const { role, id: userId } = req.user;
+
+  const lesson = await lessonRepository.findById(Number(lessonId));
+  if (!lesson) return res.status(404).json({ error: 'Lección no encontrada' });
+
+  if (role === 'STUDENT') {
+    const enrollment = await enrollmentRepository.findByUserAndCourse(userId, lesson.course.id);
+    if (!enrollment || enrollment.status !== 'ACCEPTED') {
+      return res.status(403).json({ error: 'No tienes acceso' });
+    }
+  } else if (role === 'TEACHER' && lesson.course.teacherId !== userId) {
+    return res.status(403).json({ error: 'No tienes permiso' });
+  }
+
+  const material = await materialRepository.findById(Number(materialId));
+  if (!material || material.lessonId !== Number(lessonId)) {
+    return res.status(404).json({ error: 'Material no encontrado' });
+  }
+
+  const filePath = path.join(__dirname, '..', '..', 'uploads', 'materials', material.filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Archivo no encontrado en el servidor' });
+  }
+
+  res.setHeader('Content-Disposition', 'inline');
+  res.setHeader('Content-Type', material.mimeType);
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.sendFile(filePath);
+}
+
+module.exports = { getMaterials, uploadMaterial, downloadMaterial, streamMaterial, deleteMaterial };

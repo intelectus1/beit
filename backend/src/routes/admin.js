@@ -10,6 +10,7 @@ const {
   toggleTeacherStatus,
   getAllStudents,
   getAllCoursesAdmin,
+  deleteCourse,
 } = require('../controllers/adminController');
 const { authenticate, requireRole } = require('../middleware/auth');
 
@@ -25,5 +26,6 @@ router.put('/teachers/:id', updateTeacher);
 
 router.get('/students', getAllStudents);
 router.get('/courses', getAllCoursesAdmin);
+router.delete('/courses/:id', deleteCourse);
 
 module.exports = router;

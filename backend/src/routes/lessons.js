@@ -4,7 +4,7 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const { updateLesson, deleteLesson, getLessonById, reorderLessons } = require('../controllers/lessonController');
-const { getMaterials, uploadMaterial, downloadMaterial, deleteMaterial } = require('../controllers/materialController');
+const { getMaterials, uploadMaterial, downloadMaterial, streamMaterial, deleteMaterial } = require('../controllers/materialController');
 const { getLessonTasks, createLessonTask } = require('../controllers/taskController');
 const { authenticate, requireRole } = require('../middleware/auth');
 
@@ -68,6 +68,7 @@ router.post(
   uploadMaterial
 );
 router.get('/:lessonId/materials/:materialId/download', authenticate, downloadMaterial);
+router.get('/:lessonId/materials/:materialId/stream', authenticate, streamMaterial);
 router.delete('/:lessonId/materials/:materialId', authenticate, requireRole('TEACHER', 'ADMIN', 'SUPER_ADMIN'), deleteMaterial);
 
 module.exports = router;

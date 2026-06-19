@@ -19,4 +19,12 @@ async function remove(id) {
   return prisma.lessonMaterial.delete({ where: { id } });
 }
 
-module.exports = { findByLesson, findById, create, remove };
+async function findByLessonIds(lessonIds) {
+  if (!lessonIds.length) return [];
+  return prisma.lessonMaterial.findMany({
+    where: { lessonId: { in: lessonIds } },
+    select: { filename: true },
+  });
+}
+
+module.exports = { findByLesson, findByLessonIds, findById, create, remove };

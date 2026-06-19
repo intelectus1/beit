@@ -1,5 +1,8 @@
+const path = require('path');
+const fs = require('fs');
 const userRepository = require('../repositories/userRepository');
 const courseRepository = require('../repositories/courseRepository');
+const materialRepository = require('../repositories/materialRepository');
 
 async function getPendingTeachers(req, res) {
   const teachers = await userRepository.findPendingTeachers();
@@ -78,6 +81,35 @@ async function getAllCoursesAdmin(req, res) {
   res.json(courses);
 }
 
+async function deleteCourse(req, res) {
+  const { id } = req.params;
+
+  const course = await courseRepository.findById(Number(id));
+  if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
+
+  // Delete physical material files before cascade
+  const lessonIds = (course.lessons || []).map((l) => l.id);
+  if (lessonIds.length) {
+    const materials = await materialRepository.findByLessonIds(lessonIds);
+    for (const mat of materials) {
+      const filePath = path.join(__dirname, '..', '..', 'uploads', 'materials', mat.filename);
+      if (fs.existsSync(filePath)) fs.unlink(filePath, () => {});
+    }
+  }
+
+  // Delete cover image if present
+  if (course.coverImage) {
+    try {
+      const coverFilename = course.coverImage.split('/').pop();
+      const coverPath = path.join(__dirname, '..', '..', 'uploads', 'covers', coverFilename);
+      if (fs.existsSync(coverPath)) fs.unlink(coverPath, () => {});
+    } catch { /* ignore malformed URL */ }
+  }
+
+  await courseRepository.remove(Number(id));
+  res.json({ message: 'Curso eliminado permanentemente' });
+}
+
 module.exports = {
   getPendingTeachers,
   approveTeacher,
@@ -88,4 +120,5 @@ module.exports = {
   toggleTeacherStatus,
   getAllStudents,
   getAllCoursesAdmin,
+  deleteCourse,
 };

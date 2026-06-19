@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import {
   Shield, User, Check, X, Clock, RefreshCw, Users, BookOpen,
   Search, Edit2, Power, ChevronDown, ChevronUp, GraduationCap,
-  LayoutGrid, CheckCircle, XCircle, Eye,
+  LayoutGrid, CheckCircle, XCircle, Eye, Trash2, AlertTriangle,
 } from 'lucide-react'
 import { FlowHoverButton } from '../components/ui/flow-hover-button'
 
@@ -340,12 +340,100 @@ function StudentsTab() {
   )
 }
 
+// ── Delete Course Modal ───────────────────────────────────────────────────────
+function DeleteCourseModal({ course, onClose, onDeleted }) {
+  const [confirmText, setConfirmText] = useState('')
+  const [loading, setLoading] = useState(false)
+  const REQUIRED = 'ELIMINAR'
+
+  async function handleDelete() {
+    if (confirmText !== REQUIRED) return
+    setLoading(true)
+    try {
+      await api.delete(`/admin/courses/${course.id}`)
+      toast.success('Curso eliminado permanentemente')
+      onDeleted(course.id)
+      onClose()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al eliminar el curso')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-zinc-900 border border-red-500/30 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="bg-red-500/20 p-2 rounded-lg shrink-0">
+            <AlertTriangle size={20} className="text-red-400" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Eliminar curso</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Acción permanente e irreversible</p>
+          </div>
+          <button onClick={onClose} className="ml-auto text-zinc-500 hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-5 space-y-2">
+          <p className="text-white font-semibold truncate">"{course.title}"</p>
+          <p className="text-zinc-400 text-sm">Prof. {course.teacher?.name}</p>
+          <div className="flex gap-4 text-xs text-zinc-500 pt-1">
+            <span className="flex items-center gap-1"><BookOpen size={11} /> {course._count?.lessons || 0} lecciones</span>
+            <span className="flex items-center gap-1"><Users size={11} /> {course._count?.enrollments || 0} alumnos</span>
+          </div>
+          <p className="text-red-400 text-xs pt-1">
+            Se eliminarán todas las lecciones, materiales, tareas, entregas, horarios e inscripciones.
+          </p>
+        </div>
+
+        <div className="mb-5">
+          <label className="block text-sm text-zinc-300 mb-1.5">
+            Escribe <span className="font-mono font-bold text-red-400">{REQUIRED}</span> para confirmar:
+          </label>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && confirmText === REQUIRED) handleDelete() }}
+            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
+            placeholder={REQUIRED}
+            autoFocus
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2.5 rounded-lg text-sm transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={confirmText !== REQUIRED || loading}
+            className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+          >
+            {loading
+              ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Eliminando...</>
+              : <><Trash2 size={14} /> Eliminar permanentemente</>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Courses Tab ───────────────────────────────────────────────────────────────
 function CoursesTab() {
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [deletingCourse, setDeletingCourse] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -427,9 +515,24 @@ function CoursesTab() {
               }`}>
                 {course.isPublished ? 'Publicado' : 'Borrador'}
               </span>
+              <button
+                onClick={() => setDeletingCourse(course)}
+                className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
+                title="Eliminar curso"
+              >
+                <Trash2 size={15} />
+              </button>
             </div>
           ))}
         </div>
+      )}
+
+      {deletingCourse && (
+        <DeleteCourseModal
+          course={deletingCourse}
+          onClose={() => setDeletingCourse(null)}
+          onDeleted={(id) => setCourses((prev) => prev.filter((c) => c.id !== id))}
+        />
       )}
     </div>
   )

@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
 import {
-  ArrowLeft, Video, ExternalLink, Edit2, Save, X, Upload,
-  FileText, Download, Trash2, File, Image, RefreshCw,
+  ArrowLeft, Video, Edit2, Save, X, Upload,
+  FileText, Download, Trash2, File, Image, RefreshCw, Eye,
   ClipboardList, Plus, Clock, ChevronRight, CheckCircle,
 } from 'lucide-react'
+import SecureDocumentViewer from '../components/ui/SecureDocumentViewer'
 
 // ── File type helpers ─────────────────────────────────────────────────────────
 function fileIcon(mimeType) {
@@ -28,6 +29,7 @@ function MaterialsSection({ lessonId, isOwner }) {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState({})
+  const [viewingMaterial, setViewingMaterial] = useState(null)
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -75,6 +77,10 @@ function MaterialsSection({ lessonId, isOwner }) {
     }
   }
 
+  function canView(material) {
+    return material.mimeType?.startsWith('image/') || material.mimeType === 'application/pdf'
+  }
+
   async function handleDelete(materialId) {
     if (!confirm('¿Eliminar este material?')) return
     setDeleting((d) => ({ ...d, [materialId]: true }))
@@ -89,22 +95,6 @@ function MaterialsSection({ lessonId, isOwner }) {
     }
   }
 
-  function canPreview(material) {
-    return material.mimeType?.startsWith('image/') || material.mimeType === 'application/pdf'
-  }
-
-  async function handlePreview(material) {
-    try {
-      const response = await api.get(`/lessons/${lessonId}/materials/${material.id}/download`, {
-        responseType: 'blob',
-      })
-      const url = URL.createObjectURL(response.data)
-      window.open(url, '_blank')
-      setTimeout(() => URL.revokeObjectURL(url), 10000)
-    } catch {
-      toast.error('Error al previsualizar')
-    }
-  }
 
   return (
     <div className="mt-8">
@@ -164,22 +154,24 @@ function MaterialsSection({ lessonId, isOwner }) {
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                {canPreview(material) && (
+                {canView(material) && (
                   <button
-                    onClick={() => handlePreview(material)}
-                    className="p-1.5 text-zinc-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
-                    title="Vista previa"
+                    onClick={() => setViewingMaterial(material)}
+                    className="p-1.5 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                    title="Ver documento"
                   >
-                    <ExternalLink size={14} />
+                    <Eye size={14} />
                   </button>
                 )}
-                <button
-                  onClick={() => handleDownload(material)}
-                  className="p-1.5 text-zinc-500 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
-                  title="Descargar"
-                >
-                  <Download size={14} />
-                </button>
+                {isOwner && (
+                  <button
+                    onClick={() => handleDownload(material)}
+                    className="p-1.5 text-zinc-500 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                    title="Descargar"
+                  >
+                    <Download size={14} />
+                  </button>
+                )}
                 {isOwner && (
                   <button
                     onClick={() => handleDelete(material.id)}
@@ -194,6 +186,14 @@ function MaterialsSection({ lessonId, isOwner }) {
             </div>
           ))}
         </div>
+      )}
+
+      {viewingMaterial && (
+        <SecureDocumentViewer
+          lessonId={lessonId}
+          material={viewingMaterial}
+          onClose={() => setViewingMaterial(null)}
+        />
       )}
     </div>
   )
