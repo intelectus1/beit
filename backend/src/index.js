@@ -41,6 +41,22 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
+async function startServer() {
+  // Idempotent migration: add deletedAt to User if not present
+  const { Pool } = require('pg');
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  try {
+    await pool.query('ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3)');
+    console.log('[migration] deletedAt column ensured');
+  } catch (e) {
+    console.warn('[migration] skipped:', e.message);
+  } finally {
+    await pool.end();
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
+
+startServer();
