@@ -1,4 +1,6 @@
 require('dotenv').config();
+// Railway's postgres-ssl uses a self-signed cert; disable TLS cert validation for internal connections
+if (process.env.NODE_ENV === 'production') process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
