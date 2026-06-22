@@ -71,6 +71,30 @@ async function toggleTeacherStatus(req, res) {
   res.json(updated);
 }
 
+async function deleteTeacher(req, res) {
+  const { id } = req.params;
+  const user = await userRepository.findRawById(Number(id));
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.role !== 'TEACHER') return res.status(400).json({ error: 'El usuario no es un profesor' });
+  await userRepository.softDelete(Number(id));
+  res.json({ message: 'Profesor eliminado (puede restaurarse desde la papelera)' });
+}
+
+async function getDeletedTeachers(req, res) {
+  const { search } = req.query;
+  const teachers = await userRepository.findDeletedTeachers(search || '');
+  res.json(teachers);
+}
+
+async function restoreTeacher(req, res) {
+  const { id } = req.params;
+  const user = await userRepository.findRawById(Number(id));
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.role !== 'TEACHER') return res.status(400).json({ error: 'El usuario no es un profesor' });
+  const restored = await userRepository.restore(Number(id));
+  res.json(restored);
+}
+
 async function getAllStudents(req, res) {
   const { search } = req.query;
   const students = await userRepository.findAllStudents(search || '');
@@ -78,39 +102,27 @@ async function getAllStudents(req, res) {
 }
 
 async function deleteStudent(req, res) {
-  try {
-    const { id } = req.params;
-    const user = await userRepository.findRawById(Number(id));
-    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-    if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
-    await userRepository.softDelete(Number(id));
-    res.json({ message: 'Alumno eliminado (puede restaurarse desde la papelera)' });
-  } catch (e) {
-    res.status(500).json({ error: 'Función no disponible hasta agregar columna deletedAt en la base de datos' });
-  }
+  const { id } = req.params;
+  const user = await userRepository.findRawById(Number(id));
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
+  await userRepository.softDelete(Number(id));
+  res.json({ message: 'Alumno eliminado (puede restaurarse desde la papelera)' });
 }
 
 async function getDeletedStudents(req, res) {
-  try {
-    const { search } = req.query;
-    const students = await userRepository.findDeletedStudents(search || '');
-    res.json(students);
-  } catch (e) {
-    res.status(500).json({ error: 'Función no disponible hasta agregar columna deletedAt en la base de datos' });
-  }
+  const { search } = req.query;
+  const students = await userRepository.findDeletedStudents(search || '');
+  res.json(students);
 }
 
 async function restoreStudent(req, res) {
-  try {
-    const { id } = req.params;
-    const user = await userRepository.findRawById(Number(id));
-    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-    if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
-    const restored = await userRepository.restore(Number(id));
-    res.json(restored);
-  } catch (e) {
-    res.status(500).json({ error: 'Función no disponible hasta agregar columna deletedAt en la base de datos' });
-  }
+  const { id } = req.params;
+  const user = await userRepository.findRawById(Number(id));
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.role !== 'STUDENT') return res.status(400).json({ error: 'El usuario no es un alumno' });
+  const restored = await userRepository.restore(Number(id));
+  res.json(restored);
 }
 
 async function getAllCoursesAdmin(req, res) {
@@ -124,27 +136,21 @@ async function deleteCourse(req, res) {
   const course = await courseRepository.findById(Number(id));
   if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
 
-  // Delete physical material files before cascade
-  const lessonIds = (course.lessons || []).map((l) => l.id);
-  if (lessonIds.length) {
-    const materials = await materialRepository.findByLessonIds(lessonIds);
-    for (const mat of materials) {
-      const filePath = path.join(__dirname, '..', '..', 'uploads', 'materials', mat.filename);
-      if (fs.existsSync(filePath)) fs.unlink(filePath, () => {});
-    }
-  }
+  await courseRepository.softDelete(Number(id));
+  res.json({ message: 'Curso eliminado (puede restaurarse desde la papelera)' });
+}
 
-  // Delete cover image if present
-  if (course.coverImage) {
-    try {
-      const coverFilename = course.coverImage.split('/').pop();
-      const coverPath = path.join(__dirname, '..', '..', 'uploads', 'covers', coverFilename);
-      if (fs.existsSync(coverPath)) fs.unlink(coverPath, () => {});
-    } catch { /* ignore malformed URL */ }
-  }
+async function getDeletedCourses(req, res) {
+  const courses = await courseRepository.findDeleted();
+  res.json(courses);
+}
 
-  await courseRepository.remove(Number(id));
-  res.json({ message: 'Curso eliminado permanentemente' });
+async function restoreCourse(req, res) {
+  const { id } = req.params;
+  const course = await courseRepository.findRawById(Number(id));
+  if (!course) return res.status(404).json({ error: 'Curso no encontrado' });
+  const restored = await courseRepository.restore(Number(id));
+  res.json(restored);
 }
 
 module.exports = {
@@ -155,10 +161,15 @@ module.exports = {
   getTeacherById,
   updateTeacher,
   toggleTeacherStatus,
+  deleteTeacher,
+  getDeletedTeachers,
+  restoreTeacher,
   getAllStudents,
   deleteStudent,
   getDeletedStudents,
   restoreStudent,
   getAllCoursesAdmin,
   deleteCourse,
+  getDeletedCourses,
+  restoreCourse,
 };

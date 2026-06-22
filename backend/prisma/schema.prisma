@@ -48,15 +48,16 @@ model User {
 }
 
 model Course {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String?
   coverImage  String?
   teamsLink   String?
-  isPublished Boolean  @default(false)
+  isPublished Boolean   @default(false)
   teacherId   Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   teacher    User             @relation("TeacherCourses", fields: [teacherId], references: [id])
   lessons    Lesson[]

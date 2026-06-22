@@ -39,7 +39,7 @@ async function findPendingTeachers() {
 }
 
 async function findAllTeachers(search) {
-  const where = { role: 'TEACHER' };
+  const where = { role: 'TEACHER', deletedAt: null };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -64,7 +64,7 @@ async function findAllTeachers(search) {
 }
 
 async function findAllStudents(search) {
-  const where = { role: 'STUDENT' };
+  const where = { role: 'STUDENT', deletedAt: null };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -86,8 +86,21 @@ async function findAllStudents(search) {
   });
 }
 
-// Soft delete functions — these require the deletedAt column in the DB.
-// Until the column is added via Railway Dashboard, these will return errors to the admin UI.
+async function findDeletedTeachers(search) {
+  const where = { role: 'TEACHER', deletedAt: { not: null } };
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+  return prisma.user.findMany({
+    where,
+    select: { ...PUBLIC_SELECT, deletedAt: true },
+    orderBy: { deletedAt: 'desc' },
+  });
+}
+
 async function findDeletedStudents(search) {
   const where = { role: 'STUDENT', deletedAt: { not: null } };
   if (search) {
@@ -114,5 +127,5 @@ async function restore(id) {
 module.exports = {
   findByEmail, findById, findRawById, create, updateStatus, update,
   findPendingTeachers, findAllTeachers, findAllStudents,
-  findDeletedStudents, softDelete, restore,
+  findDeletedTeachers, findDeletedStudents, softDelete, restore,
 };
