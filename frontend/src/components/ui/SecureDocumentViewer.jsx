@@ -341,11 +341,17 @@ export default function SecureDocumentViewer({ lessonId, material, onClose }) {
                 className="shadow-2xl"
               />
             ) : (
-              /* Safari fallback — show canvas directly with watermark */
+              /* Fallback for browsers without captureStream (older Safari, etc.)
+                 The ref wires this visible canvas as the offscreen target so the
+                 image/PDF is drawn directly onto it. */
               <canvas
-                ref={(el) => { if (el && offscreenRef.current) { /* copy pixels */ } }}
-                style={{ display: pdfLoaded ? 'block' : 'none', maxWidth: '100%' }}
+                ref={(el) => { if (el) offscreenRef.current = el }}
+                style={{
+                  display: (isPDF ? pdfLoaded : !!videoDims.w) ? 'block' : 'none',
+                  maxWidth: maxVideoW,
+                }}
                 draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
               />
             )}
 

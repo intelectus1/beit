@@ -110,8 +110,9 @@ async function uploadAvatar(req, res) {
     fs.unlink(oldFile, () => {});
   }
 
-  const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
-  const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+  const avatarUrl = process.env.BACKEND_URL
+    ? `${process.env.BACKEND_URL}/uploads/avatars/${req.file.filename}`
+    : `/uploads/avatars/${req.file.filename}`;
   const updated = await userRepository.update(req.user.id, { avatarUrl });
   res.json(updated);
 }

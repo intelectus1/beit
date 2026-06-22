@@ -70,7 +70,7 @@ function EditTeacherModal({ teacher, onClose, onSaved }) {
 }
 
 // ── Teacher Row ───────────────────────────────────────────────────────────────
-function TeacherRow({ teacher, onEdit, onToggle, onToggleExpand, expanded }) {
+function TeacherRow({ teacher, onEdit, onToggle, onDelete, onToggleExpand, expanded }) {
   const [toggling, setToggling] = useState(false)
   const isActive = teacher.status === 'ACTIVE'
   const courses = teacher.coursesCreated || []
@@ -117,6 +117,13 @@ function TeacherRow({ teacher, onEdit, onToggle, onToggleExpand, expanded }) {
             title={isActive ? 'Desactivar' : 'Activar'}
           >
             {toggling ? <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin inline-block" /> : <Power size={15} />}
+          </button>
+          <button
+            onClick={() => onDelete(teacher.id)}
+            className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            title="Mover a papelera"
+          >
+            <Trash2 size={15} />
           </button>
           {courses.length > 0 && (
             <button onClick={() => onToggleExpand(teacher.id)} className="p-2 text-zinc-500 hover:text-white rounded-lg transition-colors">
@@ -482,7 +489,7 @@ function DeleteCourseModal({ course, onClose, onDeleted }) {
     setLoading(true)
     try {
       await api.delete(`/admin/courses/${course.id}`)
-      toast.success('Curso eliminado permanentemente')
+      toast.success('Curso movido a la papelera')
       onDeleted(course.id)
       onClose()
     } catch (err) {
@@ -500,8 +507,8 @@ function DeleteCourseModal({ course, onClose, onDeleted }) {
             <AlertTriangle size={20} className="text-red-400" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Eliminar curso</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">Acción permanente e irreversible</p>
+            <h2 className="text-xl font-bold text-white">Mover a papelera</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Podrás restaurarlo desde la papelera</p>
           </div>
           <button onClick={onClose} className="ml-auto text-zinc-500 hover:text-white transition-colors">
             <X size={18} />
@@ -515,8 +522,8 @@ function DeleteCourseModal({ course, onClose, onDeleted }) {
             <span className="flex items-center gap-1"><BookOpen size={11} /> {course._count?.lessons || 0} lecciones</span>
             <span className="flex items-center gap-1"><Users size={11} /> {course._count?.enrollments || 0} alumnos</span>
           </div>
-          <p className="text-red-400 text-xs pt-1">
-            Se eliminarán todas las lecciones, materiales, tareas, entregas, horarios e inscripciones.
+          <p className="text-yellow-400/80 text-xs pt-1">
+            El curso dejará de ser visible pero puede recuperarse desde la papelera.
           </p>
         </div>
 
@@ -548,8 +555,8 @@ function DeleteCourseModal({ course, onClose, onDeleted }) {
             className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
           >
             {loading
-              ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Eliminando...</>
-              : <><Trash2 size={14} /> Eliminar permanentemente</>
+              ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Moviendo...</>
+              : <><Trash2 size={14} /> Mover a papelera</>
             }
           </button>
         </div>
@@ -561,18 +568,47 @@ function DeleteCourseModal({ course, onClose, onDeleted }) {
 // ── Courses Tab ───────────────────────────────────────────────────────────────
 function CoursesTab() {
   const [courses, setCourses] = useState([])
+  const [deletedCourses, setDeletedCourses] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deletedLoading, setDeletedLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [deletingCourse, setDeletingCourse] = useState(null)
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [restoring, setRestoring] = useState({})
 
-  useEffect(() => {
+  const fetchCourses = useCallback(() => {
     setLoading(true)
     api.get('/admin/courses')
       .then((res) => setCourses(res.data))
       .catch(() => toast.error('Error al cargar cursos'))
       .finally(() => setLoading(false))
   }, [])
+
+  const fetchDeletedCourses = useCallback(() => {
+    setDeletedLoading(true)
+    api.get('/admin/courses/deleted')
+      .then((res) => setDeletedCourses(res.data))
+      .catch(() => toast.error('Error al cargar papelera'))
+      .finally(() => setDeletedLoading(false))
+  }, [])
+
+  useEffect(() => { fetchCourses() }, [])
+  useEffect(() => { if (showDeleted) fetchDeletedCourses() }, [showDeleted])
+
+  async function handleRestore(courseId) {
+    setRestoring((r) => ({ ...r, [courseId]: true }))
+    try {
+      await api.put(`/admin/courses/${courseId}/restore`)
+      setDeletedCourses((prev) => prev.filter((c) => c.id !== courseId))
+      toast.success('Curso restaurado')
+      fetchCourses()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al restaurar')
+    } finally {
+      setRestoring((r) => ({ ...r, [courseId]: false }))
+    }
+  }
 
   const filtered = courses.filter((c) => {
     const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.teacher?.name?.toLowerCase().includes(search.toLowerCase())
@@ -591,78 +627,158 @@ function CoursesTab() {
             className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-        <select
-          value={filter} onChange={(e) => setFilter(e.target.value)}
-          className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        {!showDeleted && (
+          <select
+            value={filter} onChange={(e) => setFilter(e.target.value)}
+            className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="all">Todos</option>
+            <option value="published">Publicados</option>
+            <option value="draft">Borradores</option>
+          </select>
+        )}
+        <button
+          onClick={() => setShowDeleted((v) => !v)}
+          className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
+            showDeleted
+              ? 'bg-red-500/20 border-red-500/40 text-red-400'
+              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+          }`}
         >
-          <option value="all">Todos</option>
-          <option value="published">Publicados</option>
-          <option value="draft">Borradores</option>
-        </select>
+          <Trash2 size={14} />
+          Papelera {deletedCourses.length > 0 && !showDeleted && (
+            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{deletedCourses.length}</span>
+          )}
+        </button>
+        <FlowHoverButton
+          onClick={() => showDeleted ? fetchDeletedCourses() : fetchCourses()}
+          disabled={loading || deletedLoading}
+          variant="secondary"
+          icon={<RefreshCw size={14} className={(loading || deletedLoading) ? 'animate-spin' : ''} />}
+          className="text-sm px-3 py-2.5"
+        >
+          Actualizar
+        </FlowHoverButton>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {[
-          { label: 'Total cursos', value: courses.length, color: 'text-white' },
-          { label: 'Publicados', value: courses.filter((c) => c.isPublished).length, color: 'text-green-400' },
-          { label: 'Borradores', value: courses.filter((c) => !c.isPublished).length, color: 'text-yellow-400' },
-        ].map((s) => (
-          <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
-            <p className={`text-xl font-bold ${s.color}`}>{loading ? '—' : s.value}</p>
-            <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+      {showDeleted ? (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="bg-red-500/20 p-1.5 rounded-lg">
+              <Trash2 size={15} className="text-red-400" />
+            </div>
+            <h3 className="text-sm font-semibold text-red-400">Cursos eliminados (Papelera)</h3>
           </div>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-12 text-center">
-          <BookOpen size={36} className="mx-auto mb-3 text-zinc-700" />
-          <p className="text-zinc-400">No se encontraron cursos</p>
+          {deletedLoading ? (
+            <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
+          ) : deletedCourses.length === 0 ? (
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-10 text-center">
+              <RotateCcw size={32} className="mx-auto mb-3 text-zinc-700" />
+              <p className="text-zinc-400 text-sm">La papelera está vacía</p>
+            </div>
+          ) : (
+            <div className="bg-zinc-900 rounded-xl border border-red-500/20 divide-y divide-zinc-800 overflow-hidden">
+              {deletedCourses.map((course) => (
+                <div key={course.id} className="flex items-center gap-4 p-4">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-red-500/10 flex items-center justify-center shrink-0">
+                    {course.coverImage
+                      ? <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover opacity-50" />
+                      : <BookOpen size={18} className="text-red-400/60" />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-zinc-400 line-through truncate">{course.title}</p>
+                    <p className="text-sm text-zinc-600 truncate">Prof. {course.teacher?.name}</p>
+                    <p className="text-xs text-red-400/60 mt-0.5">
+                      Eliminado: {new Date(course.deletedAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-3 text-xs text-zinc-600 shrink-0">
+                    <span className="flex items-center gap-1"><Users size={11} /> {course._count?.enrollments || 0}</span>
+                    <span className="flex items-center gap-1"><BookOpen size={11} /> {course._count?.lessons || 0}</span>
+                  </div>
+                  <button
+                    onClick={() => handleRestore(course.id)}
+                    disabled={restoring[course.id]}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 rounded-lg text-sm transition-colors disabled:opacity-50 shrink-0"
+                  >
+                    {restoring[course.id]
+                      ? <span className="w-3 h-3 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
+                      : <RotateCcw size={13} />
+                    }
+                    Restaurar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
-          {filtered.map((course) => (
-            <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-zinc-800/30 transition-colors">
-              <div className="w-12 h-12 rounded-lg overflow-hidden bg-indigo-500/20 flex items-center justify-center shrink-0">
-                {course.coverImage
-                  ? <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
-                  : <BookOpen size={18} className="text-indigo-400" />
-                }
+        <>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[
+              { label: 'Total cursos', value: courses.length, color: 'text-white' },
+              { label: 'Publicados', value: courses.filter((c) => c.isPublished).length, color: 'text-green-400' },
+              { label: 'Borradores', value: courses.filter((c) => !c.isPublished).length, color: 'text-yellow-400' },
+            ].map((s) => (
+              <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
+                <p className={`text-xl font-bold ${s.color}`}>{loading ? '—' : s.value}</p>
+                <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-white truncate">{course.title}</p>
-                <p className="text-sm text-zinc-500 truncate">Prof. {course.teacher?.name}</p>
-              </div>
-              <div className="hidden sm:flex items-center gap-4 text-xs text-zinc-500 shrink-0">
-                <span className="flex items-center gap-1"><Users size={11} /> {course._count?.enrollments || 0}</span>
-                <span className="flex items-center gap-1"><BookOpen size={11} /> {course._count?.lessons || 0}</span>
-              </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${
-                course.isPublished
-                  ? 'text-green-400 bg-green-500/10 border-green-500/20'
-                  : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
-              }`}>
-                {course.isPublished ? 'Publicado' : 'Borrador'}
-              </span>
-              <Link
-                to={`/courses/${course.id}`}
-                className="p-1.5 text-zinc-600 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors shrink-0"
-                title="Ver y editar curso"
-              >
-                <Eye size={15} />
-              </Link>
-              <button
-                onClick={() => setDeletingCourse(course)}
-                className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
-                title="Eliminar curso"
-              >
-                <Trash2 size={15} />
-              </button>
+            ))}
+          </div>
+
+          {loading ? (
+            <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
+          ) : filtered.length === 0 ? (
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-12 text-center">
+              <BookOpen size={36} className="mx-auto mb-3 text-zinc-700" />
+              <p className="text-zinc-400">No se encontraron cursos</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
+              {filtered.map((course) => (
+                <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-zinc-800/30 transition-colors">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-indigo-500/20 flex items-center justify-center shrink-0">
+                    {course.coverImage
+                      ? <img src={course.coverImage} alt={course.title} className="w-full h-full object-cover" />
+                      : <BookOpen size={18} className="text-indigo-400" />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white truncate">{course.title}</p>
+                    <p className="text-sm text-zinc-500 truncate">Prof. {course.teacher?.name}</p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-4 text-xs text-zinc-500 shrink-0">
+                    <span className="flex items-center gap-1"><Users size={11} /> {course._count?.enrollments || 0}</span>
+                    <span className="flex items-center gap-1"><BookOpen size={11} /> {course._count?.lessons || 0}</span>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${
+                    course.isPublished
+                      ? 'text-green-400 bg-green-500/10 border-green-500/20'
+                      : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+                  }`}>
+                    {course.isPublished ? 'Publicado' : 'Borrador'}
+                  </span>
+                  <Link
+                    to={`/courses/${course.id}`}
+                    className="p-1.5 text-zinc-600 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors shrink-0"
+                    title="Ver y editar curso"
+                  >
+                    <Eye size={15} />
+                  </Link>
+                  <button
+                    onClick={() => setDeletingCourse(course)}
+                    className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
+                    title="Mover a papelera"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {deletingCourse && (
@@ -690,6 +806,12 @@ export default function SuperAdminPage() {
   const [editingTeacher, setEditingTeacher] = useState(null)
   const [expandedTeachers, setExpandedTeachers] = useState({})
 
+  const [deletedTeachers, setDeletedTeachers] = useState([])
+  const [deletedTeachersLoading, setDeletedTeachersLoading] = useState(false)
+  const [showDeletedTeachers, setShowDeletedTeachers] = useState(false)
+  const [deletingTeacher, setDeletingTeacher] = useState({})
+  const [restoringTeacher, setRestoringTeacher] = useState({})
+
   const fetchPending = useCallback(() => {
     setPendingLoading(true)
     api.get('/admin/teachers/pending')
@@ -706,11 +828,20 @@ export default function SuperAdminPage() {
       .finally(() => setTeachersLoading(false))
   }, [])
 
+  const fetchDeletedTeachers = useCallback(() => {
+    setDeletedTeachersLoading(true)
+    api.get('/admin/teachers/deleted')
+      .then((res) => setDeletedTeachers(res.data))
+      .catch(() => toast.error('Error al cargar papelera'))
+      .finally(() => setDeletedTeachersLoading(false))
+  }, [])
+
   useEffect(() => { fetchPending(); fetchAllTeachers() }, [])
   useEffect(() => {
     const t = setTimeout(() => fetchAllTeachers(search), 400)
     return () => clearTimeout(t)
   }, [search])
+  useEffect(() => { if (showDeletedTeachers) fetchDeletedTeachers() }, [showDeletedTeachers])
 
   async function handleAction(teacherId, action) {
     setProcessing((p) => ({ ...p, [teacherId]: action }))
@@ -733,6 +864,34 @@ export default function SuperAdminPage() {
       toast.success(data.status === 'ACTIVE' ? 'Cuenta activada' : 'Cuenta desactivada')
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error')
+    }
+  }
+
+  async function handleDeleteTeacher(teacherId) {
+    if (!confirm('¿Mover este profesor a la papelera? Podrá restaurarlo desde allí.')) return
+    setDeletingTeacher((d) => ({ ...d, [teacherId]: true }))
+    try {
+      await api.delete(`/admin/teachers/${teacherId}`)
+      setAllTeachers((prev) => prev.filter((t) => t.id !== teacherId))
+      toast.success('Profesor movido a la papelera')
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al eliminar')
+    } finally {
+      setDeletingTeacher((d) => ({ ...d, [teacherId]: false }))
+    }
+  }
+
+  async function handleRestoreTeacher(teacherId) {
+    setRestoringTeacher((r) => ({ ...r, [teacherId]: true }))
+    try {
+      await api.put(`/admin/teachers/${teacherId}/restore`)
+      setDeletedTeachers((prev) => prev.filter((t) => t.id !== teacherId))
+      toast.success('Profesor restaurado')
+      fetchAllTeachers(search)
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al restaurar')
+    } finally {
+      setRestoringTeacher((r) => ({ ...r, [teacherId]: false }))
     }
   }
 
@@ -800,47 +959,123 @@ export default function SuperAdminPage() {
                 className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-            <select
-              value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            {!showDeletedTeachers && (
+              <select
+                value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+                className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="all">Todos los estados</option>
+                <option value="active">Solo activos</option>
+                <option value="inactive">Solo inactivos</option>
+              </select>
+            )}
+            <button
+              onClick={() => setShowDeletedTeachers((v) => !v)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
+                showDeletedTeachers
+                  ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+              }`}
             >
-              <option value="all">Todos los estados</option>
-              <option value="active">Solo activos</option>
-              <option value="inactive">Solo inactivos</option>
-            </select>
+              <UserX size={14} />
+              Papelera {deletedTeachers.length > 0 && !showDeletedTeachers && (
+                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{deletedTeachers.length}</span>
+              )}
+            </button>
+            <FlowHoverButton
+              onClick={() => showDeletedTeachers ? fetchDeletedTeachers() : fetchAllTeachers(search)}
+              disabled={teachersLoading || deletedTeachersLoading}
+              variant="secondary"
+              icon={<RefreshCw size={14} className={(teachersLoading || deletedTeachersLoading) ? 'animate-spin' : ''} />}
+              className="text-sm px-3 py-2.5"
+            >
+              Actualizar
+            </FlowHoverButton>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {[
-              { label: 'Total profesores', value: allTeachers.length, color: 'text-white' },
-              { label: 'Activos', value: allTeachers.filter((t) => t.status === 'ACTIVE').length, color: 'text-green-400' },
-              { label: 'Inactivos', value: allTeachers.filter((t) => t.status !== 'ACTIVE').length, color: 'text-red-400' },
-            ].map((s) => (
-              <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
-                <p className={`text-xl font-bold ${s.color}`}>{teachersLoading ? '—' : s.value}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+          {showDeletedTeachers ? (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-red-500/20 p-1.5 rounded-lg">
+                  <UserX size={15} className="text-red-400" />
+                </div>
+                <h3 className="text-sm font-semibold text-red-400">Profesores eliminados (Papelera)</h3>
               </div>
-            ))}
-          </div>
-
-          {teachersLoading ? (
-            <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
-          ) : filteredTeachers.length === 0 ? (
-            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-12 text-center">
-              <Users size={36} className="mx-auto mb-3 text-zinc-700" />
-              <p className="text-zinc-400">No se encontraron profesores</p>
+              {deletedTeachersLoading ? (
+                <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
+              ) : deletedTeachers.length === 0 ? (
+                <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-10 text-center">
+                  <RotateCcw size={32} className="mx-auto mb-3 text-zinc-700" />
+                  <p className="text-zinc-400 text-sm">La papelera está vacía</p>
+                </div>
+              ) : (
+                <div className="bg-zinc-900 rounded-xl border border-red-500/20 divide-y divide-zinc-800 overflow-hidden">
+                  {deletedTeachers.map((teacher) => (
+                    <div key={teacher.id} className="flex items-center justify-between p-4 gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                          <User size={16} className="text-red-400/60" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-zinc-400 line-through truncate">{teacher.name}</p>
+                          <p className="text-sm text-zinc-600 truncate">{teacher.email}</p>
+                          <p className="text-xs text-red-400/60 mt-0.5">
+                            Eliminado: {new Date(teacher.deletedAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRestoreTeacher(teacher.id)}
+                        disabled={restoringTeacher[teacher.id]}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 rounded-lg text-sm transition-colors disabled:opacity-50 shrink-0"
+                      >
+                        {restoringTeacher[teacher.id]
+                          ? <span className="w-3 h-3 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
+                          : <RotateCcw size={13} />
+                        }
+                        Restaurar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
-            <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
-              {filteredTeachers.map((teacher) => (
-                <TeacherRow
-                  key={teacher.id} teacher={teacher}
-                  onEdit={setEditingTeacher} onToggle={handleToggle}
-                  onToggleExpand={(id) => setExpandedTeachers((e) => ({ ...e, [id]: !e[id] }))}
-                  expanded={!!expandedTeachers[teacher.id]}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[
+                  { label: 'Total profesores', value: allTeachers.length, color: 'text-white' },
+                  { label: 'Activos', value: allTeachers.filter((t) => t.status === 'ACTIVE').length, color: 'text-green-400' },
+                  { label: 'Inactivos', value: allTeachers.filter((t) => t.status !== 'ACTIVE').length, color: 'text-red-400' },
+                ].map((s) => (
+                  <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
+                    <p className={`text-xl font-bold ${s.color}`}>{teachersLoading ? '—' : s.value}</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {teachersLoading ? (
+                <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />)}</div>
+              ) : filteredTeachers.length === 0 ? (
+                <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-12 text-center">
+                  <Users size={36} className="mx-auto mb-3 text-zinc-700" />
+                  <p className="text-zinc-400">No se encontraron profesores</p>
+                </div>
+              ) : (
+                <div className="bg-zinc-900 rounded-xl border border-zinc-800 divide-y divide-zinc-800 overflow-hidden">
+                  {filteredTeachers.map((teacher) => (
+                    <TeacherRow
+                      key={teacher.id} teacher={teacher}
+                      onEdit={setEditingTeacher} onToggle={handleToggle}
+                      onDelete={handleDeleteTeacher}
+                      onToggleExpand={(id) => setExpandedTeachers((e) => ({ ...e, [id]: !e[id] }))}
+                      expanded={!!expandedTeachers[teacher.id]}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

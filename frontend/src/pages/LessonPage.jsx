@@ -35,7 +35,7 @@ function MaterialsSection({ lessonId, isOwner }) {
   useEffect(() => {
     api.get(`/lessons/${lessonId}/materials`)
       .then((res) => setMaterials(Array.isArray(res.data) ? res.data : []))
-      .catch(() => {})
+      .catch(() => toast.error('No se pudieron cargar los materiales'))
       .finally(() => setLoading(false))
   }, [lessonId])
 

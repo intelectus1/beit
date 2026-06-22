@@ -1018,7 +1018,15 @@ export default function CourseDetailPage() {
             {/* Background */}
             {course.coverImage ? (
               <div className="relative">
-                <img src={course.coverImage.replace(/^http:\/\//, 'https://')} alt={course.title} className="w-full h-48 object-cover" />
+                <img
+                  src={
+                    course.coverImage.startsWith('/')
+                      ? course.coverImage
+                      : course.coverImage.replace(/^http:\/\/(?!localhost)/, 'https://')
+                  }
+                  alt={course.title}
+                  className="w-full h-48 object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
               </div>
             ) : (

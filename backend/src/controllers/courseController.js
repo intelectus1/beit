@@ -232,8 +232,11 @@ async function uploadCourseCover(req, res) {
     fs.unlink(oldFile, () => {});
   }
 
-  const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
-  const coverImage = `${baseUrl}/uploads/covers/${req.file.filename}`;
+  // Use an absolute URL in production (BACKEND_URL set); otherwise store a
+  // relative path so the Vite dev-server proxy can serve it to all clients.
+  const coverImage = process.env.BACKEND_URL
+    ? `${process.env.BACKEND_URL}/uploads/covers/${req.file.filename}`
+    : `/uploads/covers/${req.file.filename}`;
   const updated = await courseRepository.update(Number(id), { coverImage });
   res.json(updated);
 }
