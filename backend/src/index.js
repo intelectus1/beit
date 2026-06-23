@@ -18,22 +18,58 @@ const app = express();
 app.set('trust proxy', 1); // Railway/Vercel terminate SSL — trust X-Forwarded-Proto
 const PORT = process.env.PORT || 5000;
 
-// ── Security headers ──────────────────────────────────────────────────────────
-// Remove fingerprinting headers before any other middleware
+// ── Security hardening ───────────────────────────────────────────────────────
+
+// 1. Remove server-fingerprinting headers
 app.use((req, res, next) => {
   res.removeHeader('Server');
   next();
 });
 
+// 2. Enforce HttpOnly + Secure + SameSite=Lax on every Set-Cookie header.
+//    This app uses JWT Bearer tokens (no server-side sessions), but this acts
+//    as a defensive net in case any dependency ever sets a cookie.
+app.use((req, res, next) => {
+  const originalSetHeader = res.setHeader.bind(res);
+  res.setHeader = function secureSetHeader(name, value) {
+    if (name.toLowerCase() === 'set-cookie') {
+      const cookies = Array.isArray(value) ? value : [value];
+      const hardened = cookies.map((c) => {
+        if (typeof c !== 'string') return c;
+        if (!/;\s*httponly/i.test(c)) c += '; HttpOnly';
+        if (!/;\s*secure/i.test(c)) c += '; Secure';
+        if (!/;\s*samesite/i.test(c)) c += '; SameSite=Lax';
+        return c;
+      });
+      return originalSetHeader(name, hardened.length === 1 ? hardened[0] : hardened);
+    }
+    return originalSetHeader(name, value);
+  };
+  next();
+});
+
+// 3. Reject requests that attempt to pass auth tokens via URL query params.
+//    ZAP flags "Session ID in URL Rewrite" — this explicitly blocks that vector.
+//    Legitimate clients must use Authorization: Bearer <token>.
+app.use((req, res, next) => {
+  const suspectParams = ['token', 'access_token', 'auth_token', 'jwt', 'session', 'sid'];
+  const found = suspectParams.find((p) => req.query[p] !== undefined);
+  if (found) {
+    return res.status(400).json({ error: 'Autenticación por URL no permitida' });
+  }
+  next();
+});
+
+// 4. Helmet: CSP without wildcards + all standard security headers
 app.use(
   helmet({
-    // CSP: API + static file server; frontend is a separate origin
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
+        // 'https:' wildcard removed — only explicit self and data URIs
+        imgSrc: ["'self'", 'data:'],
         connectSrc: ["'self'"],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
@@ -42,19 +78,16 @@ app.use(
         frameAncestors: ["'self'"],
       },
     },
-    // Allow /uploads images to load in the frontend (different origin)
+    // Allow /uploads images to load cross-origin (React frontend different domain)
     crossOriginResourcePolicy: { policy: 'cross-origin' },
-    // HSTS: only sent over HTTPS; Railway terminates SSL so req.secure works via trust proxy
+    // HSTS — Railway terminates SSL; trust proxy makes req.secure true for HTTPS
     hsts: {
       maxAge: 31536000,
       includeSubDomains: true,
       preload: true,
     },
-    // X-Frame-Options: SAMEORIGIN
     frameguard: { action: 'sameorigin' },
-    // X-Content-Type-Options: nosniff
     noSniff: true,
-    // Removes X-Powered-By: Express
     hidePoweredBy: true,
   })
 );
