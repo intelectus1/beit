@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
@@ -16,6 +17,48 @@ const scheduleRoutes = require('./routes/schedules');
 const app = express();
 app.set('trust proxy', 1); // Railway/Vercel terminate SSL — trust X-Forwarded-Proto
 const PORT = process.env.PORT || 5000;
+
+// ── Security headers ──────────────────────────────────────────────────────────
+// Remove fingerprinting headers before any other middleware
+app.use((req, res, next) => {
+  res.removeHeader('Server');
+  next();
+});
+
+app.use(
+  helmet({
+    // CSP: API + static file server; frontend is a separate origin
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        frameAncestors: ["'self'"],
+      },
+    },
+    // Allow /uploads images to load in the frontend (different origin)
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    // HSTS: only sent over HTTPS; Railway terminates SSL so req.secure works via trust proxy
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    // X-Frame-Options: SAMEORIGIN
+    frameguard: { action: 'sameorigin' },
+    // X-Content-Type-Options: nosniff
+    noSniff: true,
+    // Removes X-Powered-By: Express
+    hidePoweredBy: true,
+  })
+);
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Ensure upload directories exist
 ['covers', 'avatars', 'materials'].forEach((dir) => {
